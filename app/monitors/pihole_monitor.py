@@ -21,6 +21,7 @@ def get_client_ip(client:str):
     print("resolving clients ip: ", client)
     ip_address= socket.gethostbyname(client)
     cached_ips[client] = ip_address
+    print("successfully resolved clients ip: ", ip_address)
     return ip_address
    
 
