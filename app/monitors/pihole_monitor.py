@@ -11,6 +11,18 @@ from app.signals import sigs
 from app.constants import DataSource
 import socket
 
+cached_ips = {}
+
+def get_client_ip(client:str):
+    if client in cached_ips:
+        return cached_ips[client]
+    
+    # can throw an error that will be propagated 
+    print("resolving clients ip: ", client)
+    ip_address= socket.gethostbyname(client)
+    cached_ips[client] = ip_address
+    return ip_address
+   
 
 def fetch_query_data_job():
     current_app.logger.info('starting job...')
@@ -105,9 +117,9 @@ def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
     for datapoint in query_data:
         client = datapoint[3]
         try: 
-            ip_address= socket.gethostbyname(client)
+            ip_address = get_client_ip(client)
         except socket.gaierror:
-            print("Could not resolve client name ", client)
+            print(datetime.datetime.now(), "Cannot resolve client name ", client)
             continue
         # Filter out data from inactive/unregistered clients
         if ip_address not in active_ip_set:

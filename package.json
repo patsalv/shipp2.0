@@ -5,7 +5,8 @@
   "scripts": {
     "start": "parcel",
     "build": "parcel build",
-    "build-mail": "mjml app/static/src/weekly-summary.mjml -o app/templates/emails/weekly-summary.html"
+    "build-mail": "mjml app/static/src/weekly-summary.mjml -o app/templates/emails/weekly-summary.html",
+    "activate": "source .venv/bin/activate"
   },
   "keywords": [],
   "author": "",
