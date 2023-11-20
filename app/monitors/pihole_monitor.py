@@ -26,10 +26,11 @@ def get_client_ip(client:str):
    
 
 def fetch_query_data_job():
+    """Fetches DNS query data from pihole and stores it in influxdb"""
+
     current_app.logger.info('starting job...')
 
     influx_active = current_app.config["INFLUXDB_ACTIVE"]
-    print(f"INFLUXDB_ACTIVE: {influx_active}")
     from_timestamp = int(datetime.now().timestamp()) - int(current_app.config['SCHEDULER_TIMEINTERVAL'])
     until_timestamp = int(datetime.now().timestamp())
     if influx_active:
@@ -55,6 +56,7 @@ def fetch_query_data_job():
 
     evaluate_monitoring_signal = sigs.signal("evaluate_monitoring_signal")
     with current_app.app_context():
+        # trigger on_evaluate_monitoring_signal in signals.py
         evaluate_monitoring_signal.send(
             current_app._get_current_object(), dataset=dataset)
     create_monitoring_report(dataset, from_timestamp, until_timestamp)

@@ -17,6 +17,7 @@ def evaluate_monitoring_data(dataset: list):
         sync_policies_to_pihole()
 
 
+
 def evaluate_device_policies(device_ip: str, domains: set) -> (int, list):
     try:
         device = db.session.execute(db.select(Device).join(Device.device_configs).where(
@@ -30,11 +31,15 @@ def evaluate_device_policies(device_ip: str, domains: set) -> (int, list):
             if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
                 default_policy = policy.item
             elif policy.policy_type == PolicyType.ALLOW.value or policy.policy_type == PolicyType.BLOCK.value:
+                # policy.item probably contains domain
                 if policy.item in domains:
+                    # domain already contained in a policy
                     new_domains.remove(policy.item)
         if default_policy is None:
             raise Exception(f"Default policy for device {device_ip} not found")
         else:
+            # if new domain is detected, default policy is applied to it
+            # -> new policy inserted for this domain
             insert_policies = []
             for domain in new_domains:
                 policy_type = None
@@ -50,7 +55,8 @@ def evaluate_device_policies(device_ip: str, domains: set) -> (int, list):
         return None, None
 
 
-def insert_policy_rows(device, new_policies):
+def insert_policy_rows(device: Device, new_policies):
+    ''' Stores new policies for devices into the database used by pi-hole'''
     try:
         device.policies.extend(new_policies)
         db.session.add(device)
