@@ -65,6 +65,7 @@ class PiholeConsumer:
         builder.type_all_queries()
         builder.add_from(from_timestamp)
         builder.add_until(until_timestamp)
+        print("Query",builder._query._query_params)
         response = builder.query.send_request()
         return response
 
