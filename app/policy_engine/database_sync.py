@@ -12,6 +12,11 @@ def sync_policies_to_pihole():
 
 
 def sync_device_policies(device):
+    '''
+    Gets group corresponding to the device from pi-hole and compares the policies of the device 
+    instance with the policies of the group instance. Updates policies of the group instance
+    such that they match the policies of the device instance.
+    '''
     try:
         policies = device.policies
         db.session.commit()
@@ -21,10 +26,13 @@ def sync_device_policies(device):
         policy_type_to_pi_type = {PolicyType.ALLOW.value: 0, PolicyType.BLOCK.value: 1}
         for pi_domain in pi_domains:
             pi_domain_map[pi_domain.domain] = (pi_domain.id, pi_domain.type)
+        print(pi_domain_map)# to debug
         max_date_modified = 0
         if len(pi_domains) > 0:
             max_date_modified = max(pi_domains, key=lambda domain: domain.date_modified).date_modified
         db.session.commit()
+        # compares the date_modified of the pi_domains with the date_modified of the policies and 
+        #inserts / updated policies that are newer than the last modification of the pi_domains
         newer_policies = {policy for policy in policies if policy.date_modified > max_date_modified}
         brand_new_policies = set()
         update_policies = set()
@@ -49,6 +57,7 @@ def sync_device_policies(device):
             db.session.add(pi_group)
             db.session.flush()
 
+        # update policies (allow,block)
         if len(update_policies):
             update_pi_domains = []
             for policy in update_policies:
@@ -62,3 +71,5 @@ def sync_device_policies(device):
     except Exception as e:
         current_app.logger.error(f"Error while syncing device {device.id}'s policies to pihole: {e}")
         db.session.rollback()
+
+
