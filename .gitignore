@@ -74,3 +74,4 @@ logs
 npm-debug.log*
 
 .parcel-cache/
+*.db
