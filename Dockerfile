@@ -44,6 +44,7 @@ COPY --chown=server_runner:server_runner wsgi.py config.py boot.sh requirements.
 
 RUN apt-get update && apt-get install -y cron nano sqlite3
 
+# cron job for "execute-job" runns every hour (always when minute is 0)
 RUN echo "0 * * * * cd /opt/webapp/ && . .venv/bin/activate && . ./project_env.sh && flask execute-job >> /opt/webapp/logs/pihole_job.log 2>&1" >> /etc/cron.d/webapp-cron \
     && echo "30 12 * * 0 cd /opt/webapp/ && . .venv/bin/activate && . ./project_env.sh && flask execute-weekly-notifications >> /opt/webapp/logs/weekly_email_job.log 2>&1" >> /etc/cron.d/webapp-cron \
     && crontab -u server_runner /etc/cron.d/webapp-cron \

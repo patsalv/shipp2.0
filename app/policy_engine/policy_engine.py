@@ -5,6 +5,7 @@ from flask import current_app
 from app.policy_engine.database_sync import sync_policies_to_pihole
 
 
+# TODO: if a room policy is active, the policies should not be synced to pihole
 def evaluate_monitoring_data(dataset: list):
     current_app.logger.info("Evaluating monitoring data")
     device_to_domains = transform_dataset(dataset)
@@ -12,9 +13,9 @@ def evaluate_monitoring_data(dataset: list):
     for device_ip in device_ips:
         device, new_policies = evaluate_device_policies(device_ip, device_to_domains[device_ip])
         if device is not None and new_policies is not None and len(new_policies) > 0:
-            insert_policy_rows(device, new_policies)
+            insert_policy_rows(device, new_policies) # in device db, not pihole db
     with current_app.app_context():
-        sync_policies_to_pihole()
+        sync_policies_to_pihole() #syncs to db used by pihole
 
 
 def evaluate_device_policies(device_ip: str, domains: set) -> (int, list):
