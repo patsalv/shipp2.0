@@ -142,6 +142,40 @@ def load_user(user_id):
     return db.session.execute(db.select(User).where(User.id == user_id)).scalar_one_or_none()
 
 
+class Room(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    policies = db.relationship("RoomPolicy", backref='room', lazy="dynamic")
+
+    def insert_room(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_room(self):
+        db.session.delete(self)
+        db.session.commit()
+
+
+class RoomPolicy(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+
+    def insert_room_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update_room_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_room_policy(self):
+        db.session.delete(self)
+        db.session.commit()
+
 # TODO: Evaluate if this is needed or if we just use env variables (Would need API type / Base URL / Auth type...)
 class UserApiKey(db.Model):
     id = db.Column(db.Integer, primary_key=True)
