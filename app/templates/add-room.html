@@ -17,8 +17,13 @@ content %} {% if error %}
         <h5>
             Add devices
         </h5>
+        {% for device in devices %}
+        <li>
+            {{ device.device_name }}
+            <input type="checkbox" name="devices" value="{{ device.id }}">
+        </li>
+        {% endfor %}
         <button type="submit mt-2" class="form-btn" id="add-btn">Add room</button>  
-        
     </div>
     </form>
   </div>

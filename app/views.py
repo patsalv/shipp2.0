@@ -184,13 +184,15 @@ def rooms():
 @login_required
 def add_room():
     form = RoomForm()
-    if form.validate_on_submit():
+    if(request.method == "POST" and form.validate_on_submit()):
         # Handle form submission
         room = Room(name=form.name.data)
         room.insert_room()
         return redirect(url_for("main.rooms"))
-    
-    return render_template("add-room.html", form=form)
+
+    if(request.method=="GET"):
+        all_devices = Device.query.all()
+        return render_template("add-room.html", form=form, devices=all_devices)
 
 @bp.route("/delete-room/<int:room_id>", methods=["DELETE"])
 @login_required
