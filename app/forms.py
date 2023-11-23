@@ -17,6 +17,8 @@ class DeviceForm(FlaskForm):
 class RoomForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
 
+class RoomPolicyForm(FlaskForm):
+    name = StringField('Policy Name', validators=[DataRequired()])
 
 class LoginForm(FlaskForm):
     email = StringField('Your email', validators=[DataRequired(), Length(1, 64), Email()])

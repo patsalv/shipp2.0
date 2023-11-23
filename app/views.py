@@ -2,7 +2,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
-from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm
+from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import PolicyType
@@ -200,6 +200,15 @@ def delete_room(room_id):
     room = db.get_or_404(Room, room_id)
     room.delete_room()
     return redirect(url_for("main.rooms"))
+
+@bp.route("/room/<int:room_id>/policy", methods=["GET", "POST"])
+@login_required
+def room_policy(room_id):
+    policy_form = RoomPolicyForm()
+    if(request.method== "POST"):
+        print("inside post")
+    if(request.method =="GET"):
+        return render_template("policies/add-room-policy.html", room_id=room_id ,form=policy_form)
 
 
 def disable_input_field(input_field):
