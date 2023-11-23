@@ -70,6 +70,15 @@ def db_reset():
         app.logger.info("Database reset")
 
 
+@app.cli.command()
+def db_update():
+    """Update database with newly added models"""
+    with app.app_context():
+        db.create_all()
+        app.logger.info("Database updated")
+
+
+
 @app.shell_context_processor
 def make_shell_context():
     from app.models import Device, Policy, DeviceConfig, User, Client, Group, Domainlist

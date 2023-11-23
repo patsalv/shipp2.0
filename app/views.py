@@ -1,8 +1,8 @@
 # App routing
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
-from app.models import Device, DeviceConfig, User, Policy
-from app.forms import DeviceForm, LoginForm, RegistrationForm
+from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
+from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import PolicyType
@@ -173,6 +173,31 @@ def device_policies(device_id):
 
     return render_template("policies/device-policies.html", device=device, all_devices=all_devices, policies=policies,
                            default_policy=default_policy)
+
+
+@bp.route("/rooms", methods=["GET", "DELETE"]) # had to add delete due to the redirect from delete-room. Find proper fix later
+def rooms():
+    all_rooms = Room.query.all()
+    return render_template("rooms.html", rooms=all_rooms)
+
+@bp.route("/add-room", methods=["GET", "POST"])
+@login_required
+def add_room():
+    form = RoomForm()
+    if form.validate_on_submit():
+        # Handle form submission
+        room = Room(name=form.name.data)
+        room.insert_room()
+        return redirect(url_for("main.rooms"))
+    
+    return render_template("add-room.html", form=form)
+
+@bp.route("/delete-room/<int:room_id>", methods=["DELETE"])
+@login_required
+def delete_room(room_id):
+    room = db.get_or_404(Room, room_id)
+    room.delete_room()
+    return redirect(url_for("main.rooms"))
 
 
 def disable_input_field(input_field):

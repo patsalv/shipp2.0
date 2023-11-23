@@ -1,9 +1,32 @@
 from app.extensions import db
-from app.models import Device, DeviceConfig, Policy
+from app.models import Device, DeviceConfig, Policy, RoomPolicy
 from app.constants import PolicyType, DefaultPolicyValues
 from flask import current_app
 from app.policy_engine.database_sync import sync_policies_to_pihole
 
+
+def check_room_policies():
+    '''
+    Fetches all room policies from the DB, compares their active timeframe with 
+    the actual room status and activates/deactivates them accordingly.
+    '''
+    current_app.logger.info("Checking room policies")
+    ...
+
+def check_for_room_conflicts(room_id:int, new_policy: RoomPolicy):
+    '''
+    Checks if timeframe of new policy to be inserted conflicts with already 
+    existing policies
+    '''
+    ...
+
+def activate_room_policies():
+    '''Block all domains for all the devices in the provided room'''
+    ...
+
+def deactivate_room_policies():
+    "Re-enforce device specific polices for all the devices in the provided room"
+    ...
 
 # TODO: if a room policy is active, the policies should not be synced to pihole
 def evaluate_monitoring_data(dataset: list):

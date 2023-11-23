@@ -25,7 +25,8 @@
     "app/static/src/index.js",
     "app/static/src/dashboard.js",
     "app/static/src/device_policies.js",
-    "app/static/src/devices.js"
+    "app/static/src/devices.js",
+    "app/static/src/rooms.js"
   ],
   "targets": {
     "default": {

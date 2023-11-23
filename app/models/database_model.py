@@ -153,7 +153,7 @@ class Room(db.Model):
 
     def delete_room(self):
         db.session.delete(self)
-        db.session.commit()
+        db.session.commit() 
 
 
 class RoomPolicy(db.Model):

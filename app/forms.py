@@ -12,7 +12,10 @@ class DeviceForm(FlaskForm):
     ip = StringField('IP Address', validators=[DataRequired(), IPAddress()])
     default_policy = RadioField('Default Policy', choices=[(DefaultPolicyValues.ALLOW_ALL.value, 'Allow all'), (DefaultPolicyValues.BLOCK_ALL.value, 'Block all')],
                                 default=DefaultPolicyValues.ALLOW_ALL.value, validators=[DataRequired()])
+    
 
+class RoomForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
 
 
 class LoginForm(FlaskForm):

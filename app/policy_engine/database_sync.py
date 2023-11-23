@@ -17,6 +17,8 @@ def sync_device_policies(device):
     instance with the policies of the group instance. Updates policies of the group instance
     such that they match the policies of the device instance.
     '''
+    
+
     try:
         policies = device.policies
         db.session.commit()
@@ -34,6 +36,7 @@ def sync_device_policies(device):
         # compares the date_modified of the pi_domains with the date_modified of the policies and 
         #inserts / updated policies that are newer than the last modification of the pi_domains
         newer_policies = {policy for policy in policies if policy.date_modified > max_date_modified}
+        print("all the policies: " , policies)
         brand_new_policies = set()
         update_policies = set()
         for policy in newer_policies:
