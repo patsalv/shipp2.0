@@ -14,11 +14,11 @@ class DeviceForm(FlaskForm):
                                 default=DefaultPolicyValues.ALLOW_ALL.value, validators=[DataRequired()])
     
 
-
+# TODO: add devices to this Form.
 class RoomForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
-    devices = RadioField("Devices", coerce=str, validators=[InputRequired()])
-
+    # devices are added directly via checkbox, did not find an easy way to do it with FlaskForm   
+ 
 class RoomPolicyForm(FlaskForm):
     name = StringField('Policy Name', validators=[InputRequired()])
     start_time=TimeField('From', validators=[InputRequired()])

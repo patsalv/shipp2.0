@@ -10,16 +10,13 @@ block content %} {% if error %}
     <h5 class="text-xl font-medium text-gray-900 dark:text-white">
       Room {{room.id}}
     </h5>
-    <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
-      Devices
-    </p>
+    <p class="text-sm font-medium text-gray-900 dark:text-gray-300">Devices</p>
     {% for device in room.devices %}
-    <ul>
-      <li>device.device_name</li>
-    </ul>
+    <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+      {{device.device_name}}
+    </p>
 
     {% endfor %}
-    <p class="text-base text-gray-900 dark:text-white">...</p>
     <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
       Policies
     </p>
