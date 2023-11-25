@@ -9,9 +9,25 @@ from datetime import datetime
 from requests.exceptions import ConnectionError
 from app.signals import sigs
 from app.constants import DataSource
+import socket
 
+cached_ips = {}
+
+def get_client_ip(client:str):
+    if client in cached_ips:
+        return cached_ips[client]
+    
+    # can throw an error that will be propagated 
+    print("resolving clients ip: ", client)
+    ip_address= socket.gethostbyname(client)
+    cached_ips[client] = ip_address
+    print("successfully resolved clients ip: ", ip_address)
+    return ip_address
+   
 
 def fetch_query_data_job():
+    """Fetches DNS query data from pihole and stores it in influxdb"""
+
     current_app.logger.info('starting job...')
 
     influx_active = current_app.config["INFLUXDB_ACTIVE"]
@@ -26,7 +42,6 @@ def fetch_query_data_job():
 
     # fetch dns query data from pihole
     dataset = fetch_dns_query_data(from_timestamp, until_timestamp)
-
     if influx_active:
         # map to influxdb model
         dns_query_measurements = list(map(
@@ -41,6 +56,7 @@ def fetch_query_data_job():
 
     evaluate_monitoring_signal = sigs.signal("evaluate_monitoring_signal")
     with current_app.app_context():
+        # trigger on_evaluate_monitoring_signal in signals.py
         evaluate_monitoring_signal.send(
             current_app._get_current_object(), dataset=dataset)
     create_monitoring_report(dataset, from_timestamp, until_timestamp)
@@ -56,6 +72,7 @@ def weekly_summary():
 def last_24h_summary():
     dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - 86400,
                                    int(datetime.now().timestamp()))
+    
     return convert_to_dataframe(dataset)
 
 
@@ -70,10 +87,12 @@ def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
     max_retries = 3
     retries = 0
     error: ConnectionError | None = None
+    
     while not success and retries < max_retries:
         try:
             query_data = pihole_consumer.get_all_queries_ts(
                 from_timestamp, until_timestamp)['data']
+            # print("query_data: ", query_data)
             success = True
         except ConnectionError as e:
             current_app.logger.error(f"Cannot connect to pihole, retry in 3s. Error: {e}")
@@ -81,29 +100,39 @@ def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
             retries += 1
             time.sleep(3)
             continue
-
     if not success:
         raise ConnectionError(error)
-
     # Get all active IPs from db
     active_ips = db.session.execute(
         db.select(DeviceConfig.ip_address).where(DeviceConfig.valid_to == None)).scalars().all()  # noqa: E711
     active_ip_set = set(active_ips)
+    # ---- uncomment to debug query data in text file----
+    # Define the file path where you want to store the data
+    # test_file_path = "query_data.txt"
+    # with open(test_file_path, 'w') as file:
+    # # Write each query to the file, one per line
+    #     for query in query_data:
+    #         file.write(str(query) + "\n")
 
     dataset = []
     # Process data
+
     for datapoint in query_data:
         client = datapoint[3]
+        try: 
+            ip_address = get_client_ip(client)
+        except socket.gaierror:
+            print(datetime.datetime.now(), "Cannot resolve client name ", client)
+            continue
         # Filter out data from inactive/unregistered clients
-        if client not in active_ip_set:
+        if ip_address not in active_ip_set:
             continue
         timestamp = int(datapoint[0])
         query_type = datapoint[1]
         domain = datapoint[2]
         status = datapoint[4]
         reply_type = datapoint[6]
-        dataset.append([timestamp, client, query_type, domain, status, reply_type])
-
+        dataset.append([timestamp, ip_address, query_type, domain, status, reply_type])
     return dataset
 
 

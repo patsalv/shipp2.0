@@ -31,12 +31,11 @@ def devices():
     return render_template("devices.html", devices=active_devices)
 
 
-@bp.route("/add-device", methods=["GET", "POST"])
-@login_required
+@bp.route("/add-device", methods=["GET", "POST"])#@login_required
 def add_device():
     form = DeviceForm()
-    if form.validate_on_submit():
-        # Handle form submission
+    if form.validate_on_submit(): #not getting into this if statement
+        print("add_device form successfully validated")
         device = Device(mac_address=form.mac.data, device_name=form.name.data)
         device.device_configs.append(DeviceConfig(ip_address=form.ip.data))
         default_policy = Policy(policy_type=PolicyType.DEFAULT_POLICY.value,
@@ -49,6 +48,8 @@ def add_device():
             current_app.logger.error(f"Error while initializing pihole device: {e}")
         finally:
             return redirect(url_for("main.devices"))
+    
+    print("returning the add-device.html page again... validation failed")    
     return render_template("add-device.html", form=form)
 
 
