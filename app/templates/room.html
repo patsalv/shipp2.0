@@ -1,0 +1,61 @@
+{% extends "base.html" %} {% block title %} Room {{room.id}} {% endblock %} {%
+block content %} {% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+  <div
+    class="max-w-lg p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700"
+  >
+    <h5 class="text-xl font-medium text-gray-900 dark:text-white">
+      Room {{room.id}}
+    </h5>
+    <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+      Devices
+    </p>
+    {% for device in room.devices %}
+    <ul>
+      <li>device.device_name</li>
+    </ul>
+
+    {% endfor %}
+    <p class="text-base text-gray-900 dark:text-white">...</p>
+    <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+      Policies
+    </p>
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <thead
+          class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
+        >
+          <tr>
+            <th scope="col" class="px-6 py-3">Policy Name</th>
+            <th scope="col" class="px-6 py-3">Start</th>
+            <th scope="col" class="px-6 py-3">End</th>
+            <th scope="col" class="px-6 py-3">Status</th>
+            <th scope="col" class="px-6 py-3">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for policy in room.policies %}
+          <tr
+            data-device-id="{{ room.id }}"
+            class="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
+          >
+            <th
+              scope="row"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+            >
+              {{ policy.name }}
+            </th>
+            <td class="px-6 py-4">{{ policy.start_time }}</td>
+            <td class="px-6 py-4">{{ policy.end_time }}</td>
+            <td class="px-6 py-4">{{ policy.active }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %} {{ super() }} {% endblock %}

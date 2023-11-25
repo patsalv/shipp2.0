@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, RadioField
-from wtforms.validators import DataRequired, IPAddress, MacAddress, Email, Length, Regexp, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, BooleanField, RadioField, TimeField, SelectMultipleField
+from wtforms.validators import DataRequired,InputRequired, IPAddress, MacAddress, Email, Length, Regexp, EqualTo, ValidationError
 from app.models import User
 from app.extensions import db
 from app.constants import DefaultPolicyValues
@@ -14,11 +14,15 @@ class DeviceForm(FlaskForm):
                                 default=DefaultPolicyValues.ALLOW_ALL.value, validators=[DataRequired()])
     
 
+
 class RoomForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
+    devices = RadioField("Devices", coerce=str, validators=[InputRequired()])
 
 class RoomPolicyForm(FlaskForm):
-    name = StringField('Policy Name', validators=[DataRequired()])
+    name = StringField('Policy Name', validators=[InputRequired()])
+    start_time=TimeField('From', validators=[InputRequired()])
+    end_time=TimeField('Until', validators=[InputRequired()])
 
 class LoginForm(FlaskForm):
     email = StringField('Your email', validators=[DataRequired(), Length(1, 64), Email()])

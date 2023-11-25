@@ -15,14 +15,17 @@ content %} {% if error %}
         form.name(class_="form-input") }}
         </div>
         <h5>
-            Add devices
+            Devices in room
         </h5>
-        {% for device in devices %}
-        <li>
-            {{ device.device_name }}
-            <input type="checkbox" name="devices" value="{{ device.id }}">
-        </li>
-        {% endfor %}
+        <div class="mb-6">
+          {{ form.devices.label(class_="form-label") }}
+            {% for subfield in form.devices %}
+                <div class="flex items-center mb-4">
+                    {{ subfield(class_="form-radio-input") }}
+                    {{ subfield.label(class_="form-radio-label") }}
+                </div>
+            {% endfor %}
+        </div>
         <button type="submit mt-2" class="form-btn" id="add-btn">Add room</button>  
     </div>
     </form>

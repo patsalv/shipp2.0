@@ -11,7 +11,8 @@ class Device(db.Model):
     device_name = db.Column(db.String(64))
     device_configs = db.relationship('DeviceConfig', backref='device', lazy="dynamic")
     policies = db.relationship("Policy", backref='device', lazy="dynamic")
-
+    room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True)
+    
     def get_current_config(self):
         return self.device_configs.filter_by(valid_to=None).first()
 
@@ -146,6 +147,7 @@ class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
     policies = db.relationship("RoomPolicy", backref='room', lazy="dynamic")
+    devices = db.relationship("Device", backref='room', lazy="dynamic")
 
     def insert_room(self):
         db.session.add(self)

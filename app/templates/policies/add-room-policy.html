@@ -14,10 +14,15 @@ block content %} {% if error %}
         {{ form.name.label(class_="form-label") }} {{
         form.name(class_="form-input") }}
       <div class="flex flex-row justify-between items-center py-8">
-        <p>Active from</p>
-        <input class="flex-item" type="time" id="appt" name="appt" />
-        <p class="flex-item">to</p>
-        <input class="flex-item" type="time" id="appt" name="appt" />
+      
+        <div>
+          {{ form.start_time.label(class_="form-label") }} {{
+            form.start_time(class_="form-input") }}  
+        </div>
+        <div>
+          {{ form.end_time.label(class_="form-label") }} {{
+            form.end_time(class_="form-input") }}
+        </div>
       </div>
         <button type="submit mt-2" class="form-btn" id="add-btn">
           Add policy

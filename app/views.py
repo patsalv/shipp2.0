@@ -181,12 +181,24 @@ def rooms():
     all_rooms = Room.query.all()
     return render_template("rooms.html", rooms=all_rooms)
 
+@bp.route("/rooms/<int:room_id>", methods=["GET"]) 
+def room_by_id(room_id):
+    
+    room = db.get_or_404(Room, room_id)
+    
+    return render_template("room.html", room=room)
+
+
+
+
 @bp.route("/add-room", methods=["GET", "POST"])
 @login_required
 def add_room():
     form = RoomForm()
+    form.devices.choices = [(device.id, device.device_name) for device in Device.query.all()]
     if(request.method == "POST" and form.validate_on_submit()):
         # Handle form submission
+        print("Devices added: : ", form.devices)
         room = Room(name=form.name.data)
         room.insert_room()
         return redirect(url_for("main.rooms"))
@@ -202,14 +214,26 @@ def delete_room(room_id):
     room.delete_room()
     return redirect(url_for("main.rooms"))
 
-@bp.route("/room/<int:room_id>/policy", methods=["GET", "POST"])
+@bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required
 def room_policy(room_id):
-    policy_form = RoomPolicyForm()
+    form = RoomPolicyForm()
     if(request.method== "POST"):
-        print("inside post")
+        print("Without .data: form.name", form.name, "form.start_time", form.start_time, "form.end_time", form.end_time)
+        print("The name of the policy: ", form.name.data, "start_time: ", form.start_time.data, "end_time", form.end_time.data)
+        if(form.validate_on_submit()):
+            try:
+                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id)
+                room_policy.insert_room_policy()
+                return redirect(url_for("main.rooms"))    
+            except Exception as e:
+                current_app.logger.error(f"Error while updating room policies: {e}")
+                db.session.rollback()
+                flash("Error while updating policies.", "error")
+
+        return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
     if(request.method =="GET"):
-        return render_template("policies/add-room-policy.html", room_id=room_id ,form=policy_form)
+        return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
 
 
 def disable_input_field(input_field):
