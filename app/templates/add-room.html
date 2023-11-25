@@ -17,10 +17,14 @@ content %} {% if error %}
         <h5>
             Devices in room
         </h5>
-        <div class="mb-6">
+        <div class="mb-6 flex flex-col">
           Devices
             {% for device in devices %}
-              <input type="checkbox" value={{device.id}} name="devices"> {{ device.device_name}}
+            <div class="flex-item flex-row">
+              <input type="checkbox" value={{device.id}} name="devices"> 
+              {{ device.device_name}}
+            </div>
+              
             {% endfor %}
         </div>
         <button type="submit mt-2" class="form-btn" id="add-btn">Add room</button>  

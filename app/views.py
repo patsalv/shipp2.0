@@ -211,8 +211,9 @@ def add_room():
         return redirect(url_for("main.rooms"))
 
     if(request.method=="GET"):
-        all_devices = Device.query.all()
-        return render_template("add-room.html", form=form, devices=all_devices)
+        unassigned_devices = Device.query.filter(Device.room_id.is_(None)).all()
+
+        return render_template("add-room.html", form=form, devices=unassigned_devices)
 
 @bp.route("/delete-room/<int:room_id>", methods=["DELETE"])
 @login_required
