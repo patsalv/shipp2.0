@@ -18,16 +18,13 @@ def sync_device_policies(device):
     such that they match the policies of the device instance.
     '''
     
-
     try:
         policies = device.policies
         db.session.commit()
         pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
         pi_domains = pi_group.domains.all()
-        pi_domain_map = dict()
+        pi_domain_map = build_pi_domain_map(pi_domains)
         policy_type_to_pi_type = {PolicyType.ALLOW.value: 0, PolicyType.BLOCK.value: 1}
-        for pi_domain in pi_domains:
-            pi_domain_map[pi_domain.domain] = (pi_domain.id, pi_domain.type)
         print(pi_domain_map)# to debug
         max_date_modified = 0
         if len(pi_domains) > 0:
@@ -61,13 +58,7 @@ def sync_device_policies(device):
 
         # update policies (allow,block)
         if len(update_policies):
-            update_pi_domains = []
-            for policy in update_policies:
-                id = pi_domain_map[policy.item][0]
-                pi_domain = pi_group.domains.filter_by(id=id).one()
-                pi_domain.type = policy_type_to_pi_type[policy.policy_type]
-                update_pi_domains.append(pi_domain)
-            db.session.add_all(update_pi_domains)
+            update_existing_policies(pi_group, update_policies, pi_domain_map, policy_type_to_pi_type)
 
         db.session.commit()
     except Exception as e:
@@ -75,3 +66,17 @@ def sync_device_policies(device):
         db.session.rollback()
 
 
+def build_pi_domain_map(pi_domains)->dict:
+    pi_domain_map = dict()
+    for pi_domain in pi_domains:
+        pi_domain_map[pi_domain.domain] = (pi_domain.id, pi_domain.type)
+    return pi_domain_map
+
+def update_existing_policies(pi_group, update_policies, pi_domain_map, policy_type_to_pi_type):
+    update_pi_domains = []
+    for policy in update_policies:
+        id = pi_domain_map[policy.item][0]
+        pi_domain = pi_group.domains.filter_by(id=id).one()
+        pi_domain.type = policy_type_to_pi_type[policy.policy_type]
+        update_pi_domains.append(pi_domain)
+    db.session.add_all(update_pi_domains)
