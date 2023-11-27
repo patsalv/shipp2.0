@@ -195,10 +195,8 @@ def room_by_id(room_id):
 @login_required
 def add_room():
     form = RoomForm()
-    # form.devices.choices = [(device.id, device.device_name) for device in Device.query.all()]
     if(request.method == "POST" and form.validate_on_submit()):
         # Handle form submission
-        print("all checked devices: ", request.form.getlist("devices"))
         room = Room(name=form.name.data)
         for(device_id) in request.form.getlist("devices"):
             device = Device.query.get(device_id)
@@ -206,7 +204,6 @@ def add_room():
             device.update_device()
             room.devices.append(device)
         
-        print("room before insert: ", room)
         room.insert_room()
         return redirect(url_for("main.rooms"))
 

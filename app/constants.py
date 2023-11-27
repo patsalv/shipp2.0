@@ -14,6 +14,9 @@ class DefaultPolicyValues(Enum):
     ALLOW_ALL = "ALLOW_ALL"
     BLOCK_ALL = "BLOCK_ALL"
 
+class RoomStatus(Enum):
+    ONLINE = "ONLINE"
+    OFFLINE = "OFFLINE"
 
 class DataSource(Enum):
 

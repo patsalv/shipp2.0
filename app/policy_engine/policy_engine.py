@@ -1,17 +1,49 @@
 from app.extensions import db
-from app.models import Device, DeviceConfig, Policy, RoomPolicy
-from app.constants import PolicyType, DefaultPolicyValues
+from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room
+from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 from app.policy_engine.database_sync import sync_policies_to_pihole
+import datetime
 
+# might want to have this function in the RoomPolicy class
+def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, current_time: datetime.time) -> bool:
+    '''
+    Checks if current time is in the timeframe defined by start_time and end_time
+    '''
+    before_midnight = datetime.time(23, 59, 59)
+    over_midnight= start_time > end_time
 
-def check_room_policies():
-    '''
-    Fetches all room policies from the DB, compares their active timeframe with 
-    the actual room status and activates/deactivates them accordingly.
-    '''
-    current_app.logger.info("Checking room policies")
-    ...
+    if over_midnight:
+        if start_time <= current_time <= before_midnight:
+            return True
+        if current_time <= end_time:
+            return True
+    else:   
+        return start_time <= current_time <= end_time
+
+# might want to have this function in the Room class
+def needs_state_update(room_id:int, has_active_policy:bool):
+    room = db.session.execute(db.select(Room).where(Room.id == room_id)).scalars().one_or_none()
+    if room is None:
+        raise Exception(f"Room with id {room_id} not found")
+    
+    if room.status == RoomStatus.OFFLINE and has_active_policy:
+        return True
+    if room.status == RoomStatus.ONLINE and not has_active_policy:
+        return True
+    
+    return False
+
+# might want to have this function in the Room class
+def room_has_active_policy (room_id:int) -> bool:
+    room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
+    current_time = datetime.datetime().now()
+    for room_policy in room_policies:
+        if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
+            return True
+
+    return False
+            
 
 def check_for_room_conflicts(room_id:int, new_policy: RoomPolicy):
     '''
@@ -28,6 +60,30 @@ def deactivate_room_policies():
     "Re-enforce device specific polices for all the devices in the provided room"
     ...
 
+def evaluate_room_policies(room:Room) -> None:
+    '''
+    Fetches all room policies from the DB, compares their active timeframe with 
+    the actual room status and activates/deactivates them accordingly.
+    '''   
+    has_active_policy = room_has_active_policy(room.id)
+
+    if needs_state_update(room.id, has_active_policy):
+        if has_active_policy:
+            activate_room_policies()
+            room.status = RoomStatus.ONLINE
+            room.update_room()
+        else:
+            deactivate_room_policies()
+            room.status = RoomStatus.OFFLINE
+            room.update_room()
+            
+
+def evaluate_rooms():
+    current_app.logger.info("Evaluating rooms")
+    all_rooms = Room.query.all()
+    for room in all_rooms:
+        evaluate_room_policies(room)
+
 # TODO: if a room policy is active, the policies should not be synced to pihole
 def evaluate_monitoring_data(dataset: list):
     current_app.logger.info("Evaluating monitoring data")
@@ -38,7 +94,7 @@ def evaluate_monitoring_data(dataset: list):
         if device is not None and new_policies is not None and len(new_policies) > 0:
             insert_policy_rows(device, new_policies) # in device db, not pihole db
     with current_app.app_context():
-        sync_policies_to_pihole() #syncs to db used by pihole
+        sync_policies_to_pihole() # syncs to db used by pihole
 
 
 

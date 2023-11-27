@@ -1,9 +1,8 @@
 from app.extensions import db, cipher_suite, login_manager
-from app.constants import PolicyType
+from app.constants import PolicyType,RoomStatus
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-
 
 class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -146,8 +145,10 @@ def load_user(user_id):
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
+    status = db.Column(db.String(64), default=RoomStatus.OFFLINE, nullable=False)
     policies = db.relationship("RoomPolicy", backref='room', lazy="dynamic")
     devices = db.relationship("Device", backref='room', lazy="dynamic")
+
 
     def insert_room(self):
         db.session.add(self)
