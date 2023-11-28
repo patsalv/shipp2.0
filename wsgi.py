@@ -44,6 +44,13 @@ def execute_job():
         app.logger.info("Starting monitoring job")
         fetch_query_data_job()
 
+@app.cli.command()
+def execute_room_evaluation():
+    """Run room evaluation"""
+    with app.app_context():
+        from app.policy_engine.policy_engine import evaluate_rooms
+        app.logger.info("Starting room evaluation")
+        evaluate_rooms()
 
 @app.cli.command()
 def deploy():

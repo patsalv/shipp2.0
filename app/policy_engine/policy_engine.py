@@ -2,7 +2,7 @@ from app.extensions import db
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room
 from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
-from app.policy_engine.database_sync import sync_policies_to_pihole
+from app.policy_engine.database_sync import enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
 import datetime
 
 # might want to have this function in the RoomPolicy class
@@ -22,14 +22,13 @@ def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, current_
         return start_time <= current_time <= end_time
 
 # might want to have this function in the Room class
-def needs_state_update(room_id:int, has_active_policy:bool):
-    room = db.session.execute(db.select(Room).where(Room.id == room_id)).scalars().one_or_none()
+def needs_state_update(room: Room, has_active_policy:bool):
     if room is None:
         raise Exception(f"Room with id {room_id} not found")
     
-    if room.status == RoomStatus.OFFLINE and has_active_policy:
+    if room.status == RoomStatus.OFFLINE.value and not has_active_policy:
         return True
-    if room.status == RoomStatus.ONLINE and not has_active_policy:
+    if room.status == RoomStatus.ONLINE.value and has_active_policy:
         return True
     
     return False
@@ -37,7 +36,7 @@ def needs_state_update(room_id:int, has_active_policy:bool):
 # might want to have this function in the Room class
 def room_has_active_policy (room_id:int) -> bool:
     room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
-    current_time = datetime.datetime().now()
+    current_time = datetime.datetime.now().time()
     for room_policy in room_policies:
         if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
             return True
@@ -52,13 +51,13 @@ def check_for_room_conflicts(room_id:int, new_policy: RoomPolicy):
     '''
     ...
 
-def activate_room_policies():
+def activate_room_policies(room:Room):
     '''Block all domains for all the devices in the provided room'''
-    ...
+    enforce_offline_room(room)
 
-def deactivate_room_policies():
+def deactivate_room_policies(room_id:int):
     "Re-enforce device specific polices for all the devices in the provided room"
-    ...
+    relinquish_offline_room(room_id)
 
 def evaluate_room_policies(room:Room) -> None:
     '''
@@ -66,17 +65,24 @@ def evaluate_room_policies(room:Room) -> None:
     the actual room status and activates/deactivates them accordingly.
     '''   
     has_active_policy = room_has_active_policy(room.id)
+    print("HAS ACTIVE POLICY: ", has_active_policy)
 
-    if needs_state_update(room.id, has_active_policy):
-        if has_active_policy:
-            activate_room_policies()
-            room.status = RoomStatus.ONLINE
+    need_update= needs_state_update(room, has_active_policy)
+    print("NEED UPDATE: ", need_update)
+    if need_update:
+        try:
+            if has_active_policy:
+                activate_room_policies(room)
+                room.status = RoomStatus.OFFLINE.value
+            else:
+                room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
+                deactivate_room_policies(room.id)
+
+            # TODO: check why model is not updated in db    
             room.update_room()
-        else:
-            deactivate_room_policies()
-            room.status = RoomStatus.OFFLINE
-            room.update_room()
-            
+        except Exception as e:
+            db.rollback()
+            current_app.logger.error(f"Error while updating room status: {e}")    
 
 def evaluate_rooms():
     current_app.logger.info("Evaluating rooms")

@@ -145,12 +145,17 @@ def load_user(user_id):
 class Room(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    status = db.Column(db.String(64), default=RoomStatus.OFFLINE, nullable=False)
+    status = db.Column(db.String(64), default=RoomStatus.ONLINE.value, nullable=False)
     policies = db.relationship("RoomPolicy", backref='room', lazy="dynamic")
     devices = db.relationship("Device", backref='room', lazy="dynamic")
 
 
     def insert_room(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update_room(self):
+        print("update room")
         db.session.add(self)
         db.session.commit()
 
