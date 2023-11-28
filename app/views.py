@@ -181,7 +181,7 @@ def rooms():
     all_rooms = Room.query.all()
     return render_template("rooms.html", rooms=all_rooms)
 
-@bp.route("/rooms/<int:room_id>", methods=["GET"]) 
+@bp.route("/rooms/<int:room_id>", methods=["GET", "DELETE"]) 
 def room_by_id(room_id):
     
     room = db.get_or_404(Room, room_id)
@@ -219,13 +219,12 @@ def delete_room(room_id):
     room.delete_room()
     return redirect(url_for("main.rooms"))
 
+
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required
 def room_policy(room_id):
     form = RoomPolicyForm()
     if(request.method== "POST"):
-        print("Without .data: form.name", form.name, "form.start_time", form.start_time, "form.end_time", form.end_time)
-        print("The name of the policy: ", form.name.data, "start_time: ", form.start_time.data, "end_time", form.end_time.data)
         if(form.validate_on_submit()):
             try:
                 room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id)
@@ -239,6 +238,15 @@ def room_policy(room_id):
         return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
     if(request.method =="GET"):
         return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
+
+@bp.route("/room/<int:room_id>/policies/<int:room_policy_id>", methods=["DELETE"])
+@login_required
+def delete_room_policy(room_id,room_policy_id):
+    print("room_id: ", room_id)
+    room_policy = db.get_or_404(RoomPolicy, room_policy_id)
+    room_policy.delete_room_policy()
+    return redirect(url_for("main.room_by_id", room_id=room_id))
+    # return redirect(url_for("main.room", room_id=room_policy.room_id))
 
 
 def disable_input_field(input_field):
