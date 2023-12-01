@@ -8,7 +8,7 @@ block content %} {% if error %}
     <form class="space-y-4" method="POST">
       {{ form.hidden_tag() }}
       <h5 class="text-xl font-medium text-gray-900 dark:text-white">
-        New Policy for Room {{room_id}}
+        Policy for {{room_name}}
       </h5>
       <div class="mb-6">
         {{ form.name.label(class_="form-label") }} {{

@@ -1,3 +1,4 @@
+import datetime
 from dotenv import load_dotenv
 from logging.config import dictConfig
 import os
@@ -58,6 +59,11 @@ def deploy():
     # migrate database to latest revision
     upgrade()
 
+@app.cli.command()
+def get_current_time():
+    """Get current time (to debug)"""
+    print("Current time: ", datetime.datetime.now(), "TZ from .env: ", os.getenv('TZ'))
+    
 
 @app.cli.command()
 def execute_weekly_notifications():

@@ -13,17 +13,17 @@
       >
         <tr>
           <th scope="col" class="px-6 py-3">Policy Name</th>
-          <th scope="col" class="px-6 py-3">Policy Type</th>
+          <th scope="col" class="px-6 py-3">Room</th>
           <th scope="col" class="px-6 py-3">Start</th>
           <th scope="col" class="px-6 py-3">End</th>
           <th scope="col" class="px-6 py-3">Action</th>
         </tr>
       </thead>
       <tbody>
-        
+        {% for room_policy in room_policies %}
         <tr
           class="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
-        >{% for room_policy in room_policies %}
+        >
         {% if room_policy.active %}
           <th
             scope="row"
@@ -31,7 +31,7 @@
             >
             {{ room_policy.name }}
           </th>
-          <td class="px-6 py-4">Roomy Policy </td>
+          <td class="px-6 py-4">{{room_policy.room.name}} </td>
           <td class="px-6 py-4">{{ room_policy.start_time }}</td>
           <td class="px-6 py-4">{{ room_policy.end_time }}</td>
           <td class="px-6 py-4 text-red-600" data-policy-id="{{ room_policy.id }}">
@@ -50,8 +50,9 @@
             </svg>
           </td>
           {% endif %}
-          {% endfor %}
+          
         </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>

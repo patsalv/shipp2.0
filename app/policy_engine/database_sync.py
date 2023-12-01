@@ -22,6 +22,7 @@ def sync_device_policies(device):
         print("ROOM IS OFFLINE")
         # don't sync policies from devices if room is offline
         return
+    print("TRYING TO SYNC POLICIES TO PIHOLE")
     try:
         policies = device.policies
         db.session.commit()
@@ -115,8 +116,10 @@ def in_offline_room(device):
     # room status is None if device is not in a room
     # TODO: doublecheck if this is correct
     if device.room == None or device.room.status == None:
+        print("DEVICE NOT IN OFFLINE ROOM: ", device.device_name)
         return False
     
+    print("DEVICE IN OFFLINE ROOM: ",device.device_name)
     return device.room.status == RoomStatus.OFFLINE.value
 
 def build_pi_domain_map(pi_domains)->dict:

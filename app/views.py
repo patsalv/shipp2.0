@@ -231,6 +231,7 @@ def delete_room(room_id):
 @login_required
 def room_policy(room_id):
     form = RoomPolicyForm()
+    room = db.get_or_404(Room, room_id)
     if(request.method== "POST"): # adding new room policy
         if(form.validate_on_submit()):
             try:
@@ -245,9 +246,9 @@ def room_policy(room_id):
                 db.session.rollback()
                 flash("Error while updating policies.", "error")
 
-        return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
+        return render_template("policies/add-room-policy.html", room_name=room.name ,form=form)
     if(request.method =="GET"):
-        return render_template("policies/add-room-policy.html", room_id=room_id ,form=form)
+        return render_template("policies/add-room-policy.html", room_name=room.name ,form=form)
 
 @bp.route("/room/<int:room_id>/policies/<int:room_policy_id>", methods=["DELETE"])
 @login_required
