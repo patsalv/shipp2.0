@@ -3,7 +3,6 @@ import "flowbite";
 document.addEventListener("DOMContentLoaded", function () {
   const trashBtns = document.querySelectorAll(".trash");
   const alertMsg = document.getElementById("alertMsg");
-  console.log("hello ");
   trashBtns.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
       if (confirm("Are you sure you want to delete policy?")) {
@@ -17,7 +16,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function deleteRoomPolicy(roomId, policyId) {
     try {
-      console.log("roomId: ", roomId, "policyId: ", policyId);
       let url = undefined;
       if (window.SCRIPT_ROOT) {
         url = `${window.SCRIPT_ROOT}/room/${roomId}/policies/${policyId}`;
@@ -40,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return response;
     } catch (e) {
       console.error(e);
-      //   alertMsg.classList.replace("hidden", "flex");
+      alertMsg.classList.replace("hidden", "flex");
     }
   }
 });

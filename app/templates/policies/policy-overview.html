@@ -1,0 +1,108 @@
+{% extends "base.html" %} {% block title %} Policy Overview {% endblock %} {% block head
+%} {{ super() }} {% endblock %} {% block content %}
+  <div class="md:mx-10">
+    <div class="flex justify-between mb-4">
+      <h2 class="text-xl text-accent-3-reddish font-semibold md:ml-1">Room Policy Overview</h2>
+    </div>
+  <div class="relative overflow-x-auto shadow-md sm:rounded-lg flex flex-col justify-between">
+   
+    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+      <h2 class="text-base text-accent-3 font-semibold md:ml-2 ">Active Room Policies</h2>
+      <thead
+        class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
+      >
+        <tr>
+          <th scope="col" class="px-6 py-3">Policy Name</th>
+          <th scope="col" class="px-6 py-3">Policy Type</th>
+          <th scope="col" class="px-6 py-3">Start</th>
+          <th scope="col" class="px-6 py-3">End</th>
+          <th scope="col" class="px-6 py-3">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr
+          class="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
+        >{% for room_policy in room_policies %}
+        {% if room_policy.active %}
+          <th
+            scope="row"
+            class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+            >
+            {{ room_policy.name }}
+          </th>
+          <td class="px-6 py-4">Roomy Policy </td>
+          <td class="px-6 py-4">{{ room_policy.start_time }}</td>
+          <td class="px-6 py-4">{{ room_policy.end_time }}</td>
+          <td class="px-6 py-4 text-red-600" data-policy-id="{{ room_policy.id }}">
+            <svg
+              id="trash-{{ room_policy.id }}"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              class="w-5 h-5 trash cursor-pointer"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </td>
+          {% endif %}
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="flex justify-between mb-4 my-4">
+    <h2 class="text-xl text-accent-3-reddish font-semibold md:ml-1">Device Policy Overview</h2>
+  </div>
+  <div class="relative overflow-x-auto shadow-md sm:rounded-lg flex flex-col justify-between">
+    {% for device in all_devices %}
+    <div class="mt-2"></div>
+  <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400 ">
+    <h2 class="text-base text-accent-3 font-semibold md:ml-2 ">{{ device.device_name }}</h2>
+    <thead
+      class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
+    >
+      <tr>
+        <th scope="col" class="px-6 py-3">ID</th>
+        <th scope="col" class="px-6 py-3">Domain</th>
+        <th scope="col" class="px-6 py-3">Permission</th>
+        <th scope="col" class="px-6 py-3">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for device_policy in device.policies %}
+      <tr
+        class="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
+      >
+        <th
+          scope="row"
+          class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+          >
+          {{ device_policy.id }}
+        </th>
+        <td class="px-6 py-4">{{ device_policy.item}} </td>
+        <td class="px-6 py-4">{{ device_policy.policy_type }}</td>
+        {% if device_policy.active %}
+        <td class="px-6 py-4">Active</td>
+        {% else %}
+        <td class="px-6 py-4">Inactive</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endfor %}
+  </div>
+</div>
+</div>
+
+{% endblock %} {% block scripts %} {{ super() }}
+<script>
+  window.SCRIPT_ROOT = "{{ request.script_root|tojson|safe }}";
+</script>
+<script src="{{ url_for('static', filename='dist/devices.js') }}"></script>
+{% endblock %}

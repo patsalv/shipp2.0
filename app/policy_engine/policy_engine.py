@@ -6,7 +6,7 @@ from app.policy_engine.database_sync import enforce_offline_room, relinquish_off
 import datetime
 
 # might want to have this function in the RoomPolicy class
-def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, current_time: datetime.time) -> bool:
+def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
     '''
     Checks if current time is in the timeframe defined by start_time and end_time
     '''
@@ -14,13 +14,28 @@ def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, current_
     over_midnight= start_time > end_time
 
     if over_midnight:
-        if start_time <= current_time <= before_midnight:
+        if start_time <= time_to_check <= before_midnight:
             return True
-        if current_time <= end_time:
+        if time_to_check <= end_time:
             return True
     else:   
-        return start_time <= current_time <= end_time
+        return start_time <= time_to_check <= end_time
 
+def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time, start_time2: datetime.time, end_time2: datetime.time) -> bool:
+    # check if start_time1 is in timeframe of start_time2 and end_time2
+    if is_in_timeframe(start_time1, end_time1, start_time2):
+        return True
+    #check if end_time1 is in timeframe of start_time1 and end_time2
+    if is_in_timeframe(start_time1, end_time1, end_time2):
+        return True
+    #check if start_time2 is in timeframe of start_time1 and end_time1
+    if is_in_timeframe(start_time2, end_time2, start_time1):
+        return True
+    #check if end_time2 is in timeframe of start_time1 and end_time1
+    if is_in_timeframe(start_time2, end_time2, end_time1):
+        return True
+    
+    return False
 # might want to have this function in the Room class
 def needs_state_update(room: Room, has_active_policy:bool):
     if room is None:
@@ -44,12 +59,18 @@ def room_has_active_policy (room_id:int) -> bool:
     return False
             
 
-def check_for_room_conflicts(room_id:int, new_policy: RoomPolicy):
+def check_for_room_policy_conflicts(new_policy: RoomPolicy):
     '''
     Checks if timeframe of new policy to be inserted conflicts with already 
     existing policies
     '''
-    ...
+    specific_room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == new_policy.room_id)).scalars().all()
+    for room_policy in specific_room_policies:
+        if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
+            return True, room_policy.id
+
+    return False, None
+    
 
 def activate_room_policies(room:Room):
     '''Block all domains for all the devices in the provided room'''
@@ -75,10 +96,11 @@ def evaluate_room_policies(room:Room) -> None:
                 activate_room_policies(room)
                 room.status = RoomStatus.OFFLINE.value
             else:
+                # BUG: eventhough room is set to online, the db will only be updated after the else statement
+                print("deactivating room policies")
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
                 deactivate_room_policies(room.id)
-
-            # TODO: check why model is not updated in db    
+    
             room.update_room()
         except Exception as e:
             db.rollback()

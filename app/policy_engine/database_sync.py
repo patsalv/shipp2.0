@@ -19,6 +19,7 @@ def sync_device_policies(device):
     '''
     
     if in_offline_room(device):
+        print("ROOM IS OFFLINE")
         # don't sync policies from devices if room is offline
         return
     try:
@@ -81,18 +82,21 @@ def enforce_offline_room(room: Room):
             pi_domains = pi_group.domains.all()
             pi_domain_map = build_pi_domain_map(pi_domains)        
             new_pi_domains = get_new_pi_domains(pi_domains, policies, pi_domain_map)
-
+            
+            print("pi.domain_map before update: ", pi_domain_map)
             # inserting new domains in db (domain consisting of domain name and type)
             if len(new_pi_domains) > 0:
+                print("inserting new domains in db")
                 pi_group.domains.extend(new_pi_domains)
                 db.session.add(pi_group)
                 db.session.flush()
             
             # set already exisiting domains to block
             for domain in pi_domains:
+                print("setting already existing domains to BLOCK")
                 domain.type = 1 # 0 = allow, 1 = block
-        
-        
+
+            print("pi domains after update: ", build_pi_domain_map(pi_group.domains.all()))
             db.session.commit()    
     except Exception as e:
         current_app.logger.error(f"Error while enforcing offline room: {e}")
@@ -103,17 +107,16 @@ def relinquish_offline_room(room_id:int):
     devices = db.session.execute(db.select(Device).where(Device.room_id == room_id)).scalars().all()
     for device in devices:
         sync_device_policies(device)
-
+        pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
+        pi_domains_after_unblocking = pi_group.domains.all()
+        print("pi_domains after relinquish", build_pi_domain_map(pi_domains_after_unblocking))
 
 def in_offline_room(device):
     # room status is None if device is not in a room
     # TODO: doublecheck if this is correct
-    print("LOGGED DEVICE: ",device.room, device.device_name)
-    
     if device.room == None or device.room.status == None:
         return False
     
-    print("STATUS: ", device.room.status)
     return device.room.status == RoomStatus.OFFLINE.value
 
 def build_pi_domain_map(pi_domains)->dict:
@@ -131,7 +134,7 @@ def update_existing_policies(pi_group, update_policies, pi_domain_map, policy_ty
         update_pi_domains.append(pi_domain)
     db.session.add_all(update_pi_domains)
 
-def get_new_pi_domains(pi_domains, policies, pi_domain_map ):
+def get_new_pi_domains(pi_domains, policies, pi_domain_map):
     new_domains = set()    
     max_date_modified = 0
     if len(pi_domains) > 0:

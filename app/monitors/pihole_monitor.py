@@ -122,7 +122,7 @@ def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
         try: 
             ip_address = get_client_ip(client)
         except socket.gaierror:
-            print(datetime.datetime.now(), "Cannot resolve client name ", client)
+            print(datetime.now(), "Cannot resolve client name ", client)
             continue
         # Filter out data from inactive/unregistered clients
         if ip_address not in active_ip_set:

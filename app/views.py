@@ -5,7 +5,8 @@ from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
 from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
-from app.constants import PolicyType
+from app.constants import PolicyType, RoomStatus
+from app.policy_engine.policy_engine import check_for_room_policy_conflicts
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -151,6 +152,12 @@ def device_policies(device_id):
         return redirect(url_for("main.device_policies", device_id=device_id))
 
     device = db.get_or_404(Device, device_id)
+    room = None
+    is_offline = False
+    if device.room_id is not None:
+        room = db.get_or_404(Room, device.room_id)
+    if room:
+        is_offline = room.status == RoomStatus.OFFLINE.value
     all_devices = db.session.execute(db.select(Device)).scalars().all()
     db_policies = device.policies
     default_policy = None
@@ -173,7 +180,7 @@ def device_policies(device_id):
         policies.append(policy)
 
     return render_template("policies/device-policies.html", device=device, all_devices=all_devices, policies=policies,
-                           default_policy=default_policy)
+                           default_policy=default_policy, is_offline=is_offline)
 
 
 @bp.route("/rooms", methods=["GET", "DELETE"]) # had to add delete due to the redirect from delete-room. Find proper fix later
@@ -224,10 +231,13 @@ def delete_room(room_id):
 @login_required
 def room_policy(room_id):
     form = RoomPolicyForm()
-    if(request.method== "POST"):
+    if(request.method== "POST"): # adding new room policy
         if(form.validate_on_submit()):
             try:
                 room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id)
+                is_conflicting, conflicting_policy_id = check_for_room_policy_conflicts(room_policy)
+                if is_conflicting:
+                    raise Exception(f"Room policy conflicts with policy with id {conflicting_policy_id}")
                 room_policy.insert_room_policy()
                 return redirect(url_for("main.rooms"))    
             except Exception as e:
@@ -247,6 +257,14 @@ def delete_room_policy(room_id,room_policy_id):
     room_policy.delete_room_policy()
     return redirect(url_for("main.room_by_id", room_id=room_id))
     # return redirect(url_for("main.room", room_id=room_policy.room_id))
+
+
+@bp.route("/policies")
+@login_required
+def policies():
+    all_room_policies = RoomPolicy.query.all()
+    all_devices = Device.query.all()
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices)
 
 
 def disable_input_field(input_field):
