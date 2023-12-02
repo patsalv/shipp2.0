@@ -168,7 +168,7 @@ def retreive_policies_demanding_action(policies:Device.policies, max_date_modifi
     policies_demanding_update = set()
 
     for policy in policies:
-        print("policy name", policy.policy_name, "type: ", policy_type_to_pi_type[policy.policy_type])
+        print("policy name", policy.id, "type: ", policy_type_to_pi_type[policy.policy_type])
         if policy.policy_type == PolicyType.DefaultPolicy.value:
             continue
         elif policy.date_modified > max_date_modified: # new or modified policies
