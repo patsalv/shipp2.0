@@ -34,20 +34,26 @@ def sync_device_policies(device):
         max_date_modified = 0
         if len(pi_domains) > 0:
             max_date_modified = max(pi_domains, key=lambda domain: domain.date_modified).date_modified
-        db.session.commit()
-        # compares the date_modified of the pi_domains with the date_modified of the policies and 
-        #inserts / updated policies that are newer than the last modification of the pi_domains
-        newer_policies = {policy for policy in policies if policy.date_modified > max_date_modified}
-        brand_new_policies = set()
-        update_policies = set()
-        for policy in newer_policies:
-            if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
-                continue
-            elif policy.item in pi_domain_map:
-                if policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
-                    update_policies.add(policy)
-            else:
-                brand_new_policies.add(policy)
+        db.session.commit()        
+        
+
+        brand_new_policies, update_policies = retreive_policies_demanding_action(policies, max_date_modified,pi_domain_map,policy_type_to_pi_type)
+
+        # for policy in older_policies:
+        #     if policy.policy_type == PolicyType.DefaultPolicy.value:
+        #         continue
+        #     elif policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
+        #         # policy is already in pi_domains but has different type due to enforced room policy    
+        #         update_policies.add(policy)
+                
+        # for policy in newer_policies:
+        #     if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
+        #         continue
+        #     elif policy.item in pi_domain_map:
+        #         if policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
+        #             update_policies.add(policy)
+        #     else:
+        #         brand_new_policies.add(policy)
 
         new_pi_domains = []
 
@@ -56,6 +62,7 @@ def sync_device_policies(device):
             domain = policy.item
             new_pi_domains.append(Domainlist(type=type, domain=domain))
         
+        print("new_pi_domains: ", new_pi_domains)
         # inserting new domains in db
         if len(new_pi_domains) > 0:
             pi_group.domains.extend(new_pi_domains)
@@ -154,3 +161,29 @@ def get_new_pi_domains(pi_domains, policies, pi_domain_map):
         new_pi_domains.append(Domainlist(type=1, domain=domain))
 
     return new_pi_domains
+
+def retreive_policies_demanding_action(policies:Device.policies, max_date_modified:int, pi_domain_map:dict, policy_type_to_pi_type:dict )->tuple[set, set]:
+    """ retreive new policies and old policies that have to be re-enforced after a domain has been blocked by a room policy"""
+    brand_new_policies = set()
+    policies_demanding_update = set()
+
+    for policy in policies:
+        print("policy name", policy.policy_name, "type: ", policy_type_to_pi_type[policy.policy_type])
+        if policy.policy_type == PolicyType.DefaultPolicy.value:
+            continue
+        elif policy.date_modified > max_date_modified: # new or modified policies
+            print("inside new or modified policies")
+            if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
+                print("changed policy demanding update")
+                policies_demanding_update.add(policy)
+            else:
+                brand_new_policies.add(policy)
+        else: # old unmodified policies
+            if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
+                print("old policy demanding domain update")
+                policies_demanding_update.add(policy)
+
+    print("brand new policies: ", brand_new_policies)
+    print("policies demanding update: ", policies_demanding_update)
+
+    return brand_new_policies, policies_demanding_update
