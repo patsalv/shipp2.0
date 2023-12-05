@@ -36,7 +36,7 @@ def sync_device_policies(device):
             max_date_modified = max(pi_domains, key=lambda domain: domain.date_modified).date_modified
         db.session.commit()        
         
-
+        current_app.logger.info("before retreiving policies demanding action for device ", device.device_name) 
         brand_new_policies, update_policies = retreive_policies_demanding_action(policies, max_date_modified,pi_domain_map,policy_type_to_pi_type)
 
         # for policy in older_policies:
@@ -112,6 +112,7 @@ def enforce_offline_room(room: Room):
 
 def relinquish_offline_room(room_id:int):
     '''Restores the policies of the devices in the room'''
+    current_app.logger.info(f"Relinquishing offline room {room_id}")
     devices = db.session.execute(db.select(Device).where(Device.room_id == room_id)).scalars().all()
     for device in devices:
         sync_device_policies(device)
@@ -168,8 +169,8 @@ def retreive_policies_demanding_action(policies:Device.policies, max_date_modifi
     policies_demanding_update = set()
 
     for policy in policies:
-        print("policy name", policy.id, "type: ", policy_type_to_pi_type[policy.policy_type])
-        if policy.policy_type == PolicyType.DefaultPolicy.value:
+        current_app.logger.info("right before if policy.policy_type == PolicyType.DefaultPolicy.value: ")
+        if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
             continue
         elif policy.date_modified > max_date_modified: # new or modified policies
             print("inside new or modified policies")
