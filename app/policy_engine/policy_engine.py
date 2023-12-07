@@ -4,6 +4,7 @@ from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 from app.policy_engine.database_sync import enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
 import datetime
+from typing import Union, Tuple
 
 # might want to have this function in the RoomPolicy class
 def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
@@ -39,7 +40,7 @@ def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time,
 # might want to have this function in the Room class
 def needs_state_update(room: Room, has_active_policy:bool):
     if room is None:
-        raise Exception(f"Room with id {room_id} not found")
+        raise Exception(f"Room with id {room.id} not found")
     
     if room.status == RoomStatus.OFFLINE.value and not has_active_policy:
         return True
@@ -59,7 +60,7 @@ def room_has_active_policy (room_id:int) -> bool:
     return False
             
 
-def check_for_room_policy_conflicts(new_policy: RoomPolicy):
+def check_for_room_policy_conflicts(new_policy: RoomPolicy)-> Union[Tuple[bool, None], Tuple[bool, RoomPolicy]]:
     '''
     Checks if timeframe of new policy to be inserted conflicts with already 
     existing policies
@@ -67,7 +68,7 @@ def check_for_room_policy_conflicts(new_policy: RoomPolicy):
     specific_room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == new_policy.room_id)).scalars().all()
     for room_policy in specific_room_policies:
         if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
-            return True, room_policy.id
+            return True, room_policy
 
     return False, None
     

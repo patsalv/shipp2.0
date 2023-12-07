@@ -155,7 +155,6 @@ class Room(db.Model):
         db.session.commit()
 
     def update_room(self):
-        print("update room")
         db.session.add(self)
         db.session.commit()
 
