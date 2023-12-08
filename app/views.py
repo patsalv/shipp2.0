@@ -266,7 +266,7 @@ def delete_room_policy(room_id,room_policy_id):
 
 @bp.route("/policies")
 @login_required
-def policies():
+def policy_overview():
     all_room_policies = RoomPolicy.query.all()
     all_devices = Device.query.all()
     
