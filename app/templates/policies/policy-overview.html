@@ -75,7 +75,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for device_policy in device.policies %}
+      {% for device_policy in device.policies if not device_policy.policy_type == policy_type.DEFAULT_POLICY.value %}
       <tr
         class="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
       >
@@ -86,7 +86,13 @@
           {{ device_policy.id }}
         </th>
         <td class="px-6 py-4">{{ device_policy.item}} </td>
-        <td class="px-6 py-4">{{ device_policy.policy_type }}</td>
+        <td class="px-6 py-4">
+          {% if device_policy.policy_type == policy_type.ALLOW.value %}
+          ALLOWED
+          {% else %}
+          BLOCKED
+          {% endif %}
+        </td>
         {% if device_policy.active %}
         <td class="px-6 py-4">Active</td>
         {% else %}

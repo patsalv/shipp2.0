@@ -4,21 +4,32 @@ block content %} {% if error %}
 {% endif %}
 
 <div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+  <div class="flex text-left flex-row w-full">
+    <h2 class="text-xl text-accent-3-reddish font-semibold md:ml-1">
+      {{room.name}}
+    </h2>
+  </div>
   <div
     class="w-full p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700"
   >
-    <h5 class="text-xl font-medium text-gray-900 dark:text-white">
-      {{room.name}}
-    </h5>
+    <h5 class="text-xl font-medium text-gray-900 dark:text-white">Devices</h5>
 
-    <p class="text-sm font-medium text-gray-900 dark:text-gray-300">Devices</p>
     {% for device in room.devices %}
-    <p class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
+    <li class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">
       {{device.device_name}}
-    </p>
+    </li>
     {% endfor %}
     <div class="mb-4"></div>
-    <p class="text-sm font-medium text-gray-900 dark:text-gray-300">Policies</p>
+    <h5 class="text-xl font-medium text-gray-900 dark:text-white">Policies</h5>
+    {% if created_policy_name %}
+    <div
+      class="p-4 mb-4 text-sm text-gray-300 rounded-lg bg-gray-50 dark:bg-gray-800 dark:text-red-400"
+      role="alert"
+    >
+      Policy <span class="font-medium">{{created_policy_name}}</span> was
+      successfuly added.
+    </div>
+    {% endif %}
     <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
       <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
         <thead

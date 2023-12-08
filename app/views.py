@@ -1,4 +1,5 @@
 # App routing
+import copy
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
@@ -6,7 +7,7 @@ from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm, RoomPol
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import PolicyType, RoomStatus
-from app.policy_engine.policy_engine import check_for_room_policy_conflicts
+from app.policy_engine.policy_engine import check_for_room_policy_conflicts, evaluate_room_policies
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -241,7 +242,8 @@ def room_policy(room_id):
                 if is_conflicting:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 room_policy.insert_room_policy()
-                return redirect(url_for("main.rooms"))    
+                evaluate_room_policies(room) # ensures room policy gets immediately activated if falling in the current timeframe
+                return render_template("room.html", room=room, created_policy_name=room_policy.name)    
             except Exception as e:
                 current_app.logger.error(f"Error while updating room policies: {e}")
                 db.session.rollback()
@@ -259,7 +261,7 @@ def delete_room_policy(room_id,room_policy_id):
     room_policy = db.get_or_404(RoomPolicy, room_policy_id)
     room_policy.delete_room_policy()
     return redirect(url_for("main.room_by_id", room_id=room_id))
-    # return redirect(url_for("main.room", room_id=room_policy.room_id))
+    
 
 
 @bp.route("/policies")
@@ -267,7 +269,8 @@ def delete_room_policy(room_id,room_policy_id):
 def policies():
     all_room_policies = RoomPolicy.query.all()
     all_devices = Device.query.all()
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices)
+    
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType)
 
 
 def disable_input_field(input_field):
