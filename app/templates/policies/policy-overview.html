@@ -89,13 +89,15 @@
           {{ device_policy.id }}
         </th>
         <td class="px-6 py-4">{{ device_policy.item}} </td>
-        <td class="px-6 py-4">
-          {% if device_policy.policy_type == policy_type.ALLOW.value %}
+        {% if device_policy.policy_type == policy_type.ALLOW.value %}
+        <td class="px-6 py-4 text-green-400">
           ALLOWED
-          {% else %}
-          BLOCKED
-          {% endif %}
         </td>
+          {% else %}
+          <td class="px-6 py-4 text-red-500">
+            BLOCKED
+          </td>
+          {% endif %}
         {% if device_policy.active %}
         <td class="px-6 py-4">Active</td>
         {% else %}
