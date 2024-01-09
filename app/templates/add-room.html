@@ -14,9 +14,7 @@ content %} {% if error %}
         {{ form.name.label(class_="form-label") }} {{
         form.name(class_="form-input") }}
         </div>
-        <h5>
-            Devices in room
-        </h5>
+        
         <div class="mb-6 flex flex-col">
           Devices
             {% for device in devices %}
