@@ -169,6 +169,8 @@ class RoomPolicy(db.Model):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+    offline_mode = db.Column(db.Boolean, default=True, nullable=False)
+    request_threshold = db.Column(db.Integer, nullable=True, default=None)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
 
     def insert_room_policy(self):

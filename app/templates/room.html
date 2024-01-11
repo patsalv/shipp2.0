@@ -39,6 +39,8 @@ block content %} {% if error %}
             <th scope="col" class="px-6 py-3">Policy Name</th>
             <th scope="col" class="px-6 py-3">Start</th>
             <th scope="col" class="px-6 py-3">End</th>
+            <th scope="col" class="px-6 py-3">Offline Mode</th>
+            <th scope="col" class="px-6 py-3">Threshold</th>
             <th scope="col" class="px-6 py-3">Status</th>
             <th scope="col" class="px-6 py-3">Action</th>
           </tr>
@@ -57,7 +59,9 @@ block content %} {% if error %}
             </th>
             <td class="px-6 py-4">{{ policy.start_time }}</td>
             <td class="px-6 py-4">{{ policy.end_time }}</td>
-            <td class="px-6 py-4">{{ policy.active }}</td>
+            <td class="px-6 py-4">{{ policy.offline_mode }}</td>
+            <td class="px-6 py-4">{{ policy.request_threshold }} req/h</td>
+            <td class="px-6 py-4">{{ policy.active}}</td>
             <td class="px-6 py-4 text-red-600" data-policy-id="{{ policy.id }}">
               <svg
                 id="trash-{{ policy.id }}"

@@ -237,7 +237,7 @@ def room_policy(room_id):
     if(request.method== "POST"): # adding new room policy
         if(form.validate_on_submit()):
             try:
-                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id)
+                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
                 is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(room_policy)
                 if is_conflicting:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")

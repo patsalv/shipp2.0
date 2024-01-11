@@ -23,6 +23,21 @@ def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_
     else:   
         return start_time <= time_to_check <= end_time
 
+def get_enforced_room_policy(room_id:int):
+    ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
+    current_time = datetime.datetime.now().time()
+    room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
+    
+
+    for room_policy in room_policies:
+        if not room_policy.active:
+            return None
+        
+        if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time):
+            return room_policy
+        
+    return None
+
 def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time, start_time2: datetime.time, end_time2: datetime.time) -> bool:
     # check if start_time1 is in timeframe of start_time2 and end_time2
     if is_in_timeframe(start_time1, end_time1, start_time2):
@@ -39,22 +54,24 @@ def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time,
     
     return False
 # might want to have this function in the Room class
-def needs_state_update(room: Room, has_active_policy:bool):
+def needs_state_update(room: Room, room_has_active_offline_policy:bool):
     if room is None:
         raise Exception(f"Room with id {room.id} not found")
     
-    if room.status == RoomStatus.OFFLINE.value and not has_active_policy:
+    if room.status == RoomStatus.OFFLINE.value and not room_has_active_offline_policy:
         return True
-    if room.status == RoomStatus.ONLINE.value and has_active_policy:
+    if room.status == RoomStatus.ONLINE.value and room_has_active_offline_policy:
         return True
     
     return False
 
 # might want to have this function in the Room class
-def room_has_active_policy (room_id:int) -> bool:
+def room_has_active_offline_policy (room_id:int) -> bool:
     room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
     current_time = datetime.datetime.now().time()
     for room_policy in room_policies:
+        if not(room_policy.offline_mode):
+            continue
         if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
             return True
 
@@ -85,26 +102,28 @@ def deactivate_room_policies(room_id:int):
 def check_for_request_threshold_violation():
     from app.monitors.pihole_monitor import last_hour_summary
     dataframe = last_hour_summary()
-    print("--------------------Data frame from last hour--------------------")
-    print(dataframe)
-    print("Amount of request: ",dataframe.shape[0])
     
-
     #get all currently active room policies. 
+    all_rooms = Room.query.all()
+    for room in all_rooms:
+        enforced_policy = get_enforced_room_policy(room.id)
+        if enforced_policy is not None:
+            # go through each device in the room and check the number of requests
+            for device in room.devices:
+                # check if the number of requests for the device exceeds the threshold
+                if dataframe[dataframe['client_name'] == device.device_name].shape[0] > 1:
+                    print("Threshold exceeded. Device: ", device.device_name, " Room: ", room.name)
+                print("no thresholds exeeded for room ", room.name)
+        else:
+            print("no active policy")
 
-    #for each room with active && defined threshold, get the number of requests for all its devices from the last hour
-    
-    #check the number of requests against the threshold
-
-    #if number of requests > threshold, send notification to user via email and also display it on the dashboard
-    
 
 def evaluate_room_policies(room:Room) -> None:
     '''
     Fetches all room policies from the DB, compares their active timeframe with 
     the actual room status and activates/deactivates them accordingly.
     '''   
-    has_active_policy = room_has_active_policy(room.id)
+    has_active_policy = room_has_active_offline_policy(room.id)
     print("HAS ACTIVE POLICY: ", has_active_policy)
 
     need_update= needs_state_update(room, has_active_policy)
@@ -115,7 +134,6 @@ def evaluate_room_policies(room:Room) -> None:
                 activate_room_policies(room)
                 room.status = RoomStatus.OFFLINE.value
             else:
-                # BUG: eventhough room is set to online, the db will only be updated after the else statement
                 print("deactivating room policies")
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
                 deactivate_room_policies(room.id)

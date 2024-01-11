@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, RadioField, TimeField, SelectMultipleField
+from wtforms import StringField, PasswordField, BooleanField, RadioField, TimeField, IntegerField
 from wtforms.validators import DataRequired,InputRequired, IPAddress, MacAddress, Email, Length, Regexp, EqualTo, ValidationError
 from app.models import User
 from app.extensions import db
@@ -23,6 +23,8 @@ class RoomPolicyForm(FlaskForm):
     name = StringField('Policy Name', validators=[InputRequired()])
     start_time=TimeField('From', validators=[InputRequired()])
     end_time=TimeField('Until', validators=[InputRequired()])
+    offline_mode = BooleanField('Offline', default=True)
+    request_threshold = IntegerField('Request Threshold', default=None, )
 
 class LoginForm(FlaskForm):
     email = StringField('Your email', validators=[DataRequired(), Length(1, 64), Email()])

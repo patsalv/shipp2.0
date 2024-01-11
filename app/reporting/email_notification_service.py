@@ -7,7 +7,7 @@ from email.header import Header
 from flask import render_template, current_app
 from app.monitors.pihole_monitor import weekly_summary
 from app.reporting.pihole_reports import figure_to_byte_img, create_stacked_bar_chart, create_pie_chart
-from app.models import User
+from app.models import User, Device, RoomPolicy
 from app.extensions import db
 
 
@@ -84,6 +84,15 @@ def create_weekly_email(user: User) -> MIMEMultipart:
 
     return msg
 
+
+def create_threshold_notification_mail(user:User, room_policy: RoomPolicy, device: Device)->MIMEMultipart:
+    recipient = user.email_address
+    username = user.username
+
+    text_content = "Your email client does not support HTML messages. " \
+                   "Please use an email client that does."
+    # TODO: implement this later
+    pass
 
 def send_weekly_emails():
     for msg in generate_weekly_emails():
