@@ -6,6 +6,7 @@ from app.policy_engine.database_sync import enforce_offline_room, relinquish_off
 import datetime
 from typing import Union, Tuple
 
+
 # might want to have this function in the RoomPolicy class
 def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
     '''
@@ -80,6 +81,23 @@ def activate_room_policies(room:Room):
 def deactivate_room_policies(room_id:int):
     "Re-enforce device specific polices for all the devices in the provided room"
     relinquish_offline_room(room_id)
+
+def check_for_request_threshold_violation():
+    from app.monitors.pihole_monitor import last_hour_summary
+    dataframe = last_hour_summary()
+    print("--------------------Data frame from last hour--------------------")
+    print(dataframe)
+    print("Amount of request: ",dataframe.shape[0])
+    
+
+    #get all currently active room policies. 
+
+    #for each room with active && defined threshold, get the number of requests for all its devices from the last hour
+    
+    #check the number of requests against the threshold
+
+    #if number of requests > threshold, send notification to user via email and also display it on the dashboard
+    
 
 def evaluate_room_policies(room:Room) -> None:
     '''

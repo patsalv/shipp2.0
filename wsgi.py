@@ -54,6 +54,15 @@ def execute_room_evaluation():
         evaluate_rooms()
 
 @app.cli.command()
+def check_threshold():
+    """Threshold violation check"""
+    with app.app_context():
+        from app.policy_engine.policy_engine import check_for_request_threshold_violation
+        app.logger.info("Starting room evaluation")
+        check_for_request_threshold_violation()
+
+
+@app.cli.command()
 def deploy():
     """Run deployment tasks."""
     # migrate database to latest revision
