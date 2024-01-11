@@ -14,6 +14,9 @@ import socket
 cached_ips = {}
 
 def get_client_ip(client:str):
+    if(("Android_c6ddcc44c03c452fafc5f33877922881").lower() in client.lower()):
+        return
+    
     if client in cached_ips:
         return cached_ips[client]
     
@@ -75,6 +78,11 @@ def last_24h_summary():
     
     return convert_to_dataframe(dataset)
 
+def last_hour_summary():
+    dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - 3600,
+                                   int(datetime.now().timestamp()))
+    
+    return convert_to_dataframe(dataset)
 
 def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
     # Load Pi-hole configuration and initialize consumer
