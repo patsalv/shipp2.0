@@ -36,7 +36,7 @@ def devices():
 @bp.route("/add-device", methods=["GET", "POST"])#@login_required
 def add_device():
     form = DeviceForm()
-    if form.validate_on_submit(): #not getting into this if statement
+    if form.validate_on_submit(): 
         print("add_device form successfully validated")
         device = Device(mac_address=form.mac.data, device_name=form.name.data)
         device.device_configs.append(DeviceConfig(ip_address=form.ip.data))

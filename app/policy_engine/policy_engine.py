@@ -1,4 +1,5 @@
 from app.extensions import db
+from app.helpers.helpers import is_in_timeframe
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room
 from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
@@ -7,21 +8,7 @@ import datetime
 from typing import Union, Tuple
 
 
-# might want to have this function in the RoomPolicy class
-def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:
-    '''
-    Checks if current time is in the timeframe defined by start_time and end_time
-    '''
-    before_midnight = datetime.time(23, 59, 59)
-    over_midnight= start_time > end_time
 
-    if over_midnight:
-        if start_time <= time_to_check <= before_midnight:
-            return True
-        if time_to_check <= end_time:
-            return True
-    else:   
-        return start_time <= time_to_check <= end_time
 
 def get_enforced_room_policy(room_id:int):
     ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
@@ -53,29 +40,6 @@ def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time,
         return True
     
     return False
-# might want to have this function in the Room class
-def needs_state_update(room: Room, room_has_active_offline_policy:bool):
-    if room is None:
-        raise Exception(f"Room with id {room.id} not found")
-    
-    if room.status == RoomStatus.OFFLINE.value and not room_has_active_offline_policy:
-        return True
-    if room.status == RoomStatus.ONLINE.value and room_has_active_offline_policy:
-        return True
-    
-    return False
-
-# might want to have this function in the Room class
-def room_has_active_offline_policy (room_id:int) -> bool:
-    room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
-    current_time = datetime.datetime.now().time()
-    for room_policy in room_policies:
-        if not(room_policy.offline_mode):
-            continue
-        if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
-            return True
-
-    return False
             
 
 def check_for_room_policy_conflicts(new_policy: RoomPolicy)-> Union[Tuple[bool, None], Tuple[bool, RoomPolicy]]:
@@ -100,6 +64,7 @@ def deactivate_room_policies(room_id:int):
     relinquish_offline_room(room_id)
 
 def check_for_request_threshold_violation():
+    from app.reporting.email_notification_service import send_threshold_notification_mail
     from app.monitors.pihole_monitor import last_hour_summary
     dataframe = last_hour_summary()
     
@@ -113,7 +78,10 @@ def check_for_request_threshold_violation():
                 # check if the number of requests for the device exceeds the threshold
                 if dataframe[dataframe['client_name'] == device.device_name].shape[0] > 1:
                     print("Threshold exceeded. Device: ", device.device_name, " Room: ", room.name)
-                print("no thresholds exeeded for room ", room.name)
+                    # send email with information about the violation 
+                    # TODO: gather all violations, if multiple exist, and send them togetehr in one mail
+                    send_threshold_notification_mail(enforced_policy, device)
+            
         else:
             print("no active policy")
 
@@ -123,10 +91,10 @@ def evaluate_room_policies(room:Room) -> None:
     Fetches all room policies from the DB, compares their active timeframe with 
     the actual room status and activates/deactivates them accordingly.
     '''   
-    has_active_policy = room_has_active_offline_policy(room.id)
+    has_active_policy = room.has_active_offline_policy()
     print("HAS ACTIVE POLICY: ", has_active_policy)
 
-    need_update= needs_state_update(room, has_active_policy)
+    need_update= room.needs_status_update()
     print("NEED UPDATE: ", need_update)
     if need_update:
         try:
@@ -176,7 +144,7 @@ def evaluate_device_policies(device_ip: str, domains: set) -> (int, list):
             if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
                 default_policy = policy.item
             elif policy.policy_type == PolicyType.ALLOW.value or policy.policy_type == PolicyType.BLOCK.value:
-                # policy.item probably contains domain
+                # policy.item contains domain
                 if policy.item in domains:
                     # domain already contained in a policy
                     new_domains.remove(policy.item)

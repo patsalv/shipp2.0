@@ -88,19 +88,41 @@ def create_weekly_email(user: User) -> MIMEMultipart:
 def create_threshold_notification_mail(user:User, room_policy: RoomPolicy, device: Device)->MIMEMultipart:
     recipient = user.email_address
     username = user.username
+    print("Warning. The device", device.device_name ," surpassed the request threshold defined in policy ", room_policy.name ,".")
+    # text_content = str("Warning. The device", device.device_name ," surpassed the request threshold defined in policy ", room_policy.name ,".")
+    text_content="Test the mail lol"
+    #-----------------only for testing
+     # Get the weekly summary from pihole monitor
+    df = weekly_summary()
+    top_domains = df[['client_name', "domain"]].value_counts().nlargest(10).sort_values(ascending=False)
+    top_dict = top_domains.to_dict()
 
-    text_content = "Your email client does not support HTML messages. " \
-                   "Please use an email client that does."
-    # TODO: implement this later
-    pass
+    html_content = render_template('emails/weekly-summary.html', username=username, top_dict=top_dict)
+    #-----------------
+    msg = EmailBuilder() \
+        .with_subject('Request Threshold Violation') \
+        .with_sender(current_app.config["MAIL_USERNAME"]) \
+        .with_recipient(recipient) \
+        .with_html_content(html_content) \
+        .with_text_content(text_content) \
+        .build()
+    return msg
 
 def send_weekly_emails():
     for msg in generate_weekly_emails():
         send_email(msg)
 
+def send_threshold_notification_mail(room_policy: RoomPolicy, device: Device):
+    users = db.session.execute(db.select(User).where(User.email_address != None)).scalars().all() 
+    for user in users:
+        print("email address:", user.email_address)
+        msg = create_threshold_notification_mail(user, room_policy, device)
+        send_email(msg)
+
 
 def generate_weekly_emails():
     users = db.session.execute(db.select(User).where(User.email_address != None)).scalars().all()  # noqa
+    
     for user in users:
         msg = create_weekly_email(user)
         yield msg

@@ -4,6 +4,8 @@ from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from app.helpers.helpers import is_in_timeframe
+
 class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mac_address = db.Column(db.String(17), unique=True, nullable=False)
@@ -149,7 +151,6 @@ class Room(db.Model):
     policies = db.relationship("RoomPolicy", backref='room', lazy="dynamic")
     devices = db.relationship("Device", backref='room', lazy="dynamic")
 
-
     def insert_room(self):
         db.session.add(self)
         db.session.commit()
@@ -162,6 +163,25 @@ class Room(db.Model):
         db.session.delete(self)
         db.session.commit() 
 
+    def has_active_offline_policy (self) -> bool:
+        room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == self.id)).scalars().all()
+        current_time = datetime.now().time()
+        for room_policy in room_policies:
+            if not(room_policy.offline_mode):
+                continue
+            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
+                return True
+
+        return False    
+
+    def needs_status_update(self):
+        has_active_offline_policy = self.has_active_offline_policy()
+        if self.status == RoomStatus.OFFLINE.value and not has_active_offline_policy:
+            return True
+        if self.status == RoomStatus.ONLINE.value and has_active_offline_policy:
+            return True
+    
+        return False
 
 class RoomPolicy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
