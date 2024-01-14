@@ -18,6 +18,15 @@ class RoomStatus(Enum):
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
 
+class DeviceType(Enum):
+    CAMERA = "CAMERA"
+    LIGHT = "LIGHT"
+    SOCKET = "SOCKET"
+    VOICE_ASSISTANT = "VOICE_ASSISTANT"
+    TV = "TV"
+    SPEAKER = "SPEAKER"
+    OTHERS = "OTHERS"
+
 class DataSource(Enum):
 
     PI_HOLE = UUID("9ec62265-5475-4311-ba73-cc0d03eb6db0")

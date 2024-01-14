@@ -1,5 +1,6 @@
+from sqlalchemy import Enum
 from app.extensions import db, cipher_suite, login_manager
-from app.constants import PolicyType,RoomStatus
+from app.constants import DeviceType, HighLevelPolicy, PolicyType,RoomStatus
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -202,6 +203,29 @@ class RoomPolicy(db.Model):
         db.session.commit()
 
     def delete_room_policy(self):
+        db.session.delete(self)
+        db.session.commit()
+
+
+class DeviceTypePolicy(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    offline_mode = db.Column(db.Boolean, default=True, nullable=False)
+    request_threshold = db.Column(db.Integer, nullable=True, default=None)
+    device_type = db.Column(Enum(DeviceType), nullable=False)
+
+    def insert_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_policy(self):
         db.session.delete(self)
         db.session.commit()
 
