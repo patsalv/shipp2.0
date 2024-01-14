@@ -1,0 +1,85 @@
+{% extends "base.html" %} {% block title %} Create Policy {% endblock %} {%
+block content %}
+
+<div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+  <div class="form-device">
+    <form class="space-y-4" method="POST">
+      {{ form.hidden_tag() }}
+      <h5 class="text-xl font-medium text-gray-900 dark:text-white">
+        Create a new Policy
+      </h5>
+      {% if error %}
+      <div
+        class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+        role="alert"
+      >
+        {{error}}
+      </div>
+      {% endif %}
+      <div class="mb-6">
+        {{ form.name.label(class_="form-label") }} {{
+        form.name(class_="form-input") }}
+      </div>
+
+      <div class="mb-6">
+        {{ form.policy_type.label(class_="form-label") }}
+        <div class="flex items-center mb-4">
+          {% for subfield in form.policy_type %} {{
+          subfield(class_="form-radio-input") }} {{
+          subfield.label(class_="form-radio-label") }}
+          <div class="w-3"></div>
+          {% endfor %}
+        </div>
+      </div>
+      <div id="room-selector" class="hidden">
+        <div class="mb-6 flex-1">
+          {{ form.rooms.label(class_="form-label") }} {{
+          form.rooms(class_="form-input") }}
+        </div>
+      </div>
+
+      <div id="device-type-selector" class="hidden">
+        <div class="mb-6 flex-1">
+          {{ form.device_types.label(class_="form-label") }} {{
+          form.device_types(class_="form-input") }}
+        </div>
+      </div>
+
+      <div class="flex flex-row justify-between items-center py-8">
+        <div class="flex flex-row items-center">
+          <div class="flex-item">
+            {{ form.start_time.label(class_="form-label") }}
+          </div>
+          <div class="w-3"></div>
+          <div>{{form.start_time(class_="form-input") }}</div>
+        </div>
+        <div class="flex flex-row items-center">
+          <div class="flex-item">
+            {{ form.end_time.label(class_="form-label") }}
+          </div>
+          <div class="w-3"></div>
+          <div>{{form.end_time(class_="form-input") }}</div>
+          <div class="w-3"></div>
+          <div>{{form.offline_mode.label(class_="form-label") }}</div>
+          <div class="w-3"></div>
+          <div>{{form.offline_mode(class_="form-input") }}</div>
+        </div>
+      </div>
+      <div class="flex flex-row items-center"></div>
+      <div class="flex flex-row items-center">
+        <div>{{form.request_threshold.label(class_="form-label") }}</div>
+        <div class="w-3"></div>
+        <div class="w-16">{{form.request_threshold(class_="form-input") }}</div>
+        <div class="w-3"></div>
+        req/h
+      </div>
+      <div class="h-5"></div>
+      <button type="submit mt-2" class="form-btn" id="add-btn">
+        Add policy
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block scripts %} {{ super() }}
+<script src="{{ url_for('static', filename='dist/add-highlevel-policies.js') }}"></script>
+{% endblock %}

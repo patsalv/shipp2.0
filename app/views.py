@@ -3,7 +3,7 @@ import copy
 from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
-from app.forms import DeviceForm, LoginForm, RegistrationForm, RoomForm, RoomPolicyForm
+from app.forms import DeviceForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import PolicyType, RoomStatus
@@ -28,7 +28,7 @@ def index():
 @login_required
 def devices():
     active_devices = db.session.execute(db.select(
-        Device.id, Device.device_name, Device.mac_address, DeviceConfig.ip_address, DeviceConfig.valid_from)
+        Device.id, Device.device_name, Device.mac_address,Device.device_type, DeviceConfig.ip_address, DeviceConfig.valid_from, )
                                         .join(Device.device_configs).where(DeviceConfig.valid_to == None))  # noqa: E711
     return render_template("devices.html", devices=active_devices)
 
@@ -38,10 +38,11 @@ def add_device():
     form = DeviceForm()
     if form.validate_on_submit(): 
         print("add_device form successfully validated")
-        device = Device(mac_address=form.mac.data, device_name=form.name.data)
+        device = Device(mac_address=form.mac.data, device_name=form.name.data, device_type=form.device_type.data)
         device.device_configs.append(DeviceConfig(ip_address=form.ip.data))
         default_policy = Policy(policy_type=PolicyType.DEFAULT_POLICY.value,
                                 item=form.default_policy.data)
+        
         device.policies.append(default_policy)
         device.insert_device()
         try:
@@ -226,6 +227,15 @@ def delete_room(room_id):
     room = db.get_or_404(Room, room_id)
     room.delete_room()
     return redirect(url_for("main.rooms"))
+
+@bp.route("/highlevelpolicies", methods=["GET", "POST"])
+@login_required
+def highlevel_policies():
+    form=PolicyForm()
+    all_rooms = Room.query.all()
+    form.rooms.choices= [(room.id,room.name) for room in all_rooms] 
+    if(request.method=="GET"):
+        return render_template("policies/add-highlevel-policy.html", form=form)
 
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])

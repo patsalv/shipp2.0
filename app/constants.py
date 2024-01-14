@@ -18,14 +18,18 @@ class RoomStatus(Enum):
     ONLINE = "ONLINE"
     OFFLINE = "OFFLINE"
 
+class HighLevelPolicyType(Enum):
+    ROOM_POLICY = "ROOM_POLICY"
+    DEVICE_TYPE_POLICY = "DEVICE_TYPE_POLICY"
+
 class DeviceType(Enum):
-    CAMERA = "CAMERA"
-    LIGHT = "LIGHT"
-    SOCKET = "SOCKET"
-    VOICE_ASSISTANT = "VOICE_ASSISTANT"
+    CAMERA = "Camera"
+    LIGHT = "Light"
+    SOCKET = "Socket"
+    VOICE_ASSISTANT = "Voice Assistant"
     TV = "TV"
-    SPEAKER = "SPEAKER"
-    OTHERS = "OTHERS"
+    SPEAKER = "Speaker"
+    OTHERS = "Others"
 
 class DataSource(Enum):
 

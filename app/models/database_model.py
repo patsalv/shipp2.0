@@ -1,6 +1,6 @@
 from sqlalchemy import Enum
 from app.extensions import db, cipher_suite, login_manager
-from app.constants import DeviceType, HighLevelPolicy, PolicyType,RoomStatus
+from app.constants import DeviceType, PolicyType,RoomStatus
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,6 +11,7 @@ class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mac_address = db.Column(db.String(17), unique=True, nullable=False)
     device_name = db.Column(db.String(64))
+    device_type = db.Column(Enum(DeviceType), nullable=False)
     device_configs = db.relationship('DeviceConfig', backref='device', lazy="dynamic")
     policies = db.relationship("Policy", backref='device', lazy="dynamic")
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True)
@@ -160,6 +161,8 @@ class Room(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    # TODO: implement better deletion logic. Should first delete all room_policies that exist for this 
+    # room as well as remove the rooms from the devices
     def delete_room(self):
         db.session.delete(self)
         db.session.commit() 

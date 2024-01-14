@@ -24,6 +24,10 @@ content %} {% if error %}
         }}
       </div>
       <div class="mb-6">
+        {{ form.device_type.label(class_="form-label") }} {{
+        form.device_type(class_="form-input") }}
+      </div>
+      <div class="mb-6">
         {{ form.default_policy.label(class_="form-label") }} {% for subfield in
         form.default_policy %}
         <div class="flex items-center mb-4">
@@ -32,6 +36,7 @@ content %} {% if error %}
         </div>
         {% endfor %}
       </div>
+
       <button type="submit mt-2" class="form-btn" id="add-btn">
         Add device
       </button>

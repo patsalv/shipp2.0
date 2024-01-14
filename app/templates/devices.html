@@ -60,7 +60,7 @@
                         IP
                     </th>
                     <th scope="col" class="px-6 py-3">
-                        Last modified
+                        Type
                     </th>
                     <th scope="col" class="px-6 py-3">
                         Action
@@ -84,7 +84,7 @@
                             {{ device.ip_address }}
                         </td>
                         <td class="px-6 py-4">
-                            {{ device.valid_from }}
+                            {{ device.device_type.value }}
                         </td>
                         <td class="px-6 py-4">
                             <a href="{{ url_for("main.edit_device", device_id=device.id) }}"

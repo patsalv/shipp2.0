@@ -27,7 +27,8 @@
     "app/static/src/device_policies.js",
     "app/static/src/devices.js",
     "app/static/src/rooms.js",
-    "app/static/src/room.js"
+    "app/static/src/room.js",
+    "app/static/src/add-highlevel-policies.js"
   ],
   "targets": {
     "default": {
