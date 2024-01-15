@@ -3,6 +3,17 @@
   <div class="md:mx-10">
     <div class="flex justify-between mb-4">
       <h2 class="text-xl text-accent-3-reddish font-semibold md:ml-1">Room Policy Overview</h2>
+      <a href="{{ url_for("main.highlevel_policies") }}">
+        <button type="button"
+                class="text-white bg-accent-2-space-cadet hover:bg-accent-2-space-cadet-li focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                id="add-btn">
+            Add policies
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
+            </svg>
+            <span class="sr-only">Add policies</span>
+        </button>
+    </a>
     </div>
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg flex flex-col justify-between">
    
