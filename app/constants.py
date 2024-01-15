@@ -23,13 +23,13 @@ class HighLevelPolicyType(Enum):
     DEVICE_TYPE_POLICY = "DEVICE_TYPE_POLICY"
 
 class DeviceType(Enum):
-    CAMERA = "Camera"
-    LIGHT = "Light"
-    SOCKET = "Socket"
-    VOICE_ASSISTANT = "Voice Assistant"
+    CAMERA = "CAMERA"
+    LIGHT = "LIGHT"
+    SOCKET = "SOCKET"
+    VOICE_ASSISTANT = "VOICE_ASSISTANT"
     TV = "TV"
-    SPEAKER = "Speaker"
-    OTHERS = "Others"
+    SPEAKER = "SPEAKER"
+    OTHERS = "OTHERS"
 
 class DataSource(Enum):
 

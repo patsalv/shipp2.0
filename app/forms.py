@@ -32,12 +32,16 @@ class PolicyForm(FlaskForm):
     name = StringField('Policy Name', validators=[InputRequired()])
     policy_type = RadioField("Policy Type", choices=[(HighLevelPolicyType.ROOM_POLICY.value, 'Room Policy'), (HighLevelPolicyType.DEVICE_TYPE_POLICY.value, 'Device Type Policy')],)
     rooms = SelectField('Rooms')
-    device_types = SelectField("Device Type", choices=[(DeviceType.CAMERA.value, "Camera"), (DeviceType.LIGHT.value, "Light"), (DeviceType.SOCKET.value, "Socket"), (DeviceType.VOICE_ASSISTANT.value, "Voice Assistant"), (DeviceType.TV.value, "Smart TV"), (DeviceType.SPEAKER.value, "Speaker"),(DeviceType.OTHERS.value, "Others")])
+    device_types = SelectField("Device Type", choices=[(DeviceType.CAMERA.value, "Camera"), (DeviceType.LIGHT.value, "Light"),
+                (DeviceType.SOCKET.value, "Socket"), (DeviceType.VOICE_ASSISTANT.value, "Voice Assistant"),
+                (DeviceType.TV.value, "Smart TV"), (DeviceType.SPEAKER.value, "Speaker"),
+                (DeviceType.OTHERS.value, "Others")])
     start_time=TimeField('From', validators=[InputRequired()])
     end_time=TimeField('Until', validators=[InputRequired()])
     offline_mode = BooleanField('Offline', default=True)
     request_threshold = IntegerField('Request Threshold', default=None)
 
+    
 class LoginForm(FlaskForm):
     email = StringField('Your email', validators=[DataRequired(), Length(1, 64), Email()])
     password = PasswordField('Password', validators=[DataRequired()])

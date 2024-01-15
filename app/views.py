@@ -1,13 +1,14 @@
 # App routing
 import copy
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app, abort
+from flask import Blueprint, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
 from app.forms import DeviceForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
-from app.constants import PolicyType, RoomStatus
-from app.policy_engine.policy_engine import check_for_room_policy_conflicts, evaluate_room_policies
+from app.constants import HighLevelPolicyType, PolicyType, RoomStatus
+from app.models.database_model import DeviceTypePolicy
+from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -186,11 +187,13 @@ def device_policies(device_id):
 
 
 @bp.route("/rooms", methods=["GET", "DELETE"]) # had to add delete due to the redirect from delete-room. Find proper fix later
+@login_required
 def rooms():
     all_rooms = Room.query.all()
     return render_template("rooms.html", rooms=all_rooms)
 
 @bp.route("/rooms/<int:room_id>", methods=["GET", "DELETE"]) 
+@login_required
 def room_by_id(room_id):
     
     room = db.get_or_404(Room, room_id)
@@ -236,7 +239,34 @@ def highlevel_policies():
     form.rooms.choices= [(room.id,room.name) for room in all_rooms] 
     if(request.method=="GET"):
         return render_template("policies/add-highlevel-policy.html", form=form)
-
+    
+    if(request.method=="POST" and form.validate_on_submit()):
+        try:
+            # Handle room policy
+            if form.policy_type.data == HighLevelPolicyType.ROOM_POLICY.value:
+                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=form.rooms.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
+                is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(room_policy)
+                if is_conflicting:
+                    raise Exception(f"Device type policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+                room_policy.insert_room_policy()
+                corresponding_room = db.get_or_404(Room, form.rooms.data)
+                evaluate_room_policies(corresponding_room) # ensures room policy gets immediately activated if falling in the current timeframe
+                return render_template("room.html", room=corresponding_room, created_policy_name=room_policy.name)    
+            
+            elif form.policy_type.data == HighLevelPolicyType.DEVICE_TYPE_POLICY.value:
+                device_type_policy = DeviceTypePolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, device_type=form.device_types.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
+                is_conflicting, policy_in_conflict = check_for_device_type_policy_conflicts(device_type_policy)
+                if is_conflicting:
+                    raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+                device_type_policy.insert_policy()
+                # add something like evaluate room polic but for device type policies
+                # return to policy overview
+                return redirect(url_for("main.policy_overview"))
+        except Exception as e:
+            current_app.logger.error(f"Error while updating highlevel policies: {e}")
+            db.session.rollback()
+            return render_template("policies/add-highlevel-policy.html",form=form, error=e)
+        
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required
@@ -257,7 +287,6 @@ def room_policy(room_id):
             except Exception as e:
                 current_app.logger.error(f"Error while updating room policies: {e}")
                 db.session.rollback()
-                flash("Error while updating policies.", "error")
                 return render_template(ADD_ROOM_POLICY_ROUTE, room_name=room.name ,form=form, error=e)
 
         return render_template(ADD_ROOM_POLICY_ROUTE, room_name=room.name ,form=form)
@@ -267,20 +296,28 @@ def room_policy(room_id):
 @bp.route("/room/<int:room_id>/policies/<int:room_policy_id>", methods=["DELETE"])
 @login_required
 def delete_room_policy(room_id,room_policy_id):
-    print("room_id: ", room_id)
     room_policy = db.get_or_404(RoomPolicy, room_policy_id)
     room_policy.delete_room_policy()
     return redirect(url_for("main.room_by_id", room_id=room_id))
     
+@bp.route("/device-types/policies/<int:policy_id>", methods=["DELETE"])
+@login_required
+def delete_device_type_policy(policy_id):
+    device_type_policy = db.get_or_404(DeviceTypePolicy, policy_id)
+    device_type_policy.delete_policy()
+    return redirect(url_for("main.policy_overview"))
+    
 
 
-@bp.route("/policies")
+# deletion because of redirection accepted. There has to be a better way...
+@bp.route("/policies", methods=["GET", "DELETE"])
 @login_required
 def policy_overview():
     all_room_policies = RoomPolicy.query.all()
     all_devices = Device.query.all()
+    all_device_type_policies = DeviceTypePolicy.query.all()
     
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType)
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies)
 
 
 def disable_input_field(input_field):

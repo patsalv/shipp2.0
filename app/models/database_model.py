@@ -187,6 +187,29 @@ class Room(db.Model):
     
         return False
 
+
+class HighLevelPolicy(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
+    offline_mode = db.Column(db.Boolean, default=True, nullable=False)
+    request_threshold = db.Column(db.Integer, nullable=True, default=None)
+
+    def insert_room_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update_room_policy(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def delete_room_policy(self):
+        db.session.delete(self)
+        db.session.commit()
+
+
 class RoomPolicy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
