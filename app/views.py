@@ -259,14 +259,14 @@ def highlevel_policies():
                 if is_conflicting:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 device_type_policy.insert_policy()
-                # add something like evaluate room polic but for device type policies
+                # add something like evaluate room policy but for device type policies
                 # return to policy overview
                 return redirect(url_for("main.policy_overview"))
         except Exception as e:
             current_app.logger.error(f"Error while updating highlevel policies: {e}")
             db.session.rollback()
             return render_template("policies/add-highlevel-policy.html",form=form, error=e)
-        
+    return render_template("policies/add-highlevel-policy.html",form=form, error=e)
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required
@@ -307,7 +307,6 @@ def delete_device_type_policy(policy_id):
     device_type_policy.delete_policy()
     return redirect(url_for("main.policy_overview"))
     
-
 
 # deletion because of redirection accepted. There has to be a better way...
 @bp.route("/policies", methods=["GET", "DELETE"])

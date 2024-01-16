@@ -3,6 +3,8 @@ from app.extensions import db
 from app.constants import PolicyType, RoomStatus
 from flask import current_app
 
+from app.models.database_model import Policy
+
 
 def sync_policies_to_pihole():
     devices = db.session.execute(db.select(Device)).scalars().all()
@@ -36,22 +38,6 @@ def sync_device_policies(device):
         
         brand_new_policies, update_policies = retreive_policies_demanding_action(policies, max_date_modified,pi_domain_map,policy_type_to_pi_type)
 
-        # for policy in older_policies:
-        #     if policy.policy_type == PolicyType.DefaultPolicy.value:
-        #         continue
-        #     elif policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
-        #         # policy is already in pi_domains but has different type due to enforced room policy    
-        #         update_policies.add(policy)
-                
-        # for policy in newer_policies:
-        #     if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
-        #         continue
-        #     elif policy.item in pi_domain_map:
-        #         if policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
-        #             update_policies.add(policy)
-        #     else:
-        #         brand_new_policies.add(policy)
-
         new_pi_domains = []
 
         for policy in brand_new_policies:
@@ -59,7 +45,6 @@ def sync_device_policies(device):
             domain = policy.item
             new_pi_domains.append(Domainlist(type=type, domain=domain))
         
-        print("new_pi_domains: ", new_pi_domains)
         # inserting new domains in db
         if len(new_pi_domains) > 0:
             pi_group.domains.extend(new_pi_domains)
@@ -74,6 +59,27 @@ def sync_device_policies(device):
     except Exception as e:
         current_app.logger.error(f"Error while syncing device {device.id}'s policies to pihole: {e}")
         db.session.rollback()
+
+def deactivate_device_policies(room: Room ):
+    '''Sets all policies of the devices in the room to inactive'''
+    try:
+        devices= room.devices
+        for device in devices: 
+            policies = device.policies
+            for policy in policies:
+                policy.active = False
+                policy.update_policy()
+    except Exception as e:
+        print("An error occured while deactivation_device_policies:  ", e)
+
+def activate_device_policies(room: Room ):
+    '''Sets all policies of the devices in the room to active'''
+    devices= room.devices
+    for device in devices: 
+        policies = device.policies
+        for policy in policies:
+            policy.active = True
+            policy.update_policy()
 
 
 def enforce_offline_room(room: Room):

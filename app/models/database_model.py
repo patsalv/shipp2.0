@@ -67,7 +67,7 @@ class DeviceConfig(db.Model):
         db.session.commit()
 
     def __repr__(self):
-        return '<DeviceConfig %r>' % self.id
+        return '<DeviceConfig %r>' % self.id    
 
 
 class Policy(db.Model):

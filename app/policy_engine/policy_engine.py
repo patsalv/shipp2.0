@@ -4,7 +4,7 @@ from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room, DeviceTyp
 from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 
-from app.policy_engine.database_sync import enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
 import datetime
 from typing import Union, Tuple
 
@@ -99,10 +99,12 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
 def activate_room_policies(room:Room):
     '''Block all domains for all the devices in the provided room'''
     enforce_offline_room(room)
+    deactivate_device_policies(room)
 
-def deactivate_room_policies(room_id:int):
+def deactivate_room_policies(room:Room):
     "Re-enforce device specific polices for all the devices in the provided room"
-    relinquish_offline_room(room_id)
+    relinquish_offline_room(room.id)
+    activate_device_policies(room)
 
 def check_for_request_threshold_violation():
     from app.reporting.email_notification_service import send_threshold_notification_mail
@@ -133,19 +135,18 @@ def evaluate_room_policies(room:Room) -> None:
     the actual room status and activates/deactivates them accordingly.
     '''   
     has_active_policy = room.has_active_offline_policy()
-    print("HAS ACTIVE POLICY: ", has_active_policy)
 
     need_update= room.needs_status_update()
-    print("NEED UPDATE: ", need_update)
     if need_update:
         try:
             if has_active_policy:
                 activate_room_policies(room)
                 room.status = RoomStatus.OFFLINE.value
+                #deactivate_device_policies(room)
             else:
-                print("deactivating room policies")
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
-                deactivate_room_policies(room.id)
+                deactivate_room_policies(room)
+                #activate_device_policies(room)
     
             room.update_room()
         except Exception as e:
