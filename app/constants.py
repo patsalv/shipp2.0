@@ -22,7 +22,7 @@ class HighLevelPolicyType(Enum):
     ROOM_POLICY = "ROOM_POLICY"
     DEVICE_TYPE_POLICY = "DEVICE_TYPE_POLICY"
 
-class DeviceType(Enum):
+class DeviceTypeEnum(Enum):
     CAMERA = "CAMERA"
     LIGHT = "LIGHT"
     SOCKET = "SOCKET"

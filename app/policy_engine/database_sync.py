@@ -1,4 +1,4 @@
-from app.models import Group, Device, Domainlist, Room
+from app.models import Group, Device, Domainlist, Room, DeviceTypePolicy
 from app.extensions import db
 from app.constants import PolicyType, RoomStatus
 from flask import current_app
@@ -60,55 +60,51 @@ def sync_device_policies(device):
         current_app.logger.error(f"Error while syncing device {device.id}'s policies to pihole: {e}")
         db.session.rollback()
 
-def deactivate_device_policies(room: Room ):
+def deactivate_device_policies(device: Device ):
     '''Sets all policies of the devices in the room to inactive'''
     try:
-        devices= room.devices
-        for device in devices: 
-            policies = device.policies
-            for policy in policies:
-                policy.active = False
-                policy.update_policy()
+        policies = device.policies
+        for policy in policies:
+            policy.active = False
+            policy.update_policy()
     except Exception as e:
         print("An error occured while deactivation_device_policies:  ", e)
 
-def activate_device_policies(room: Room ):
+def activate_device_policies(device: Device ):
     '''Sets all policies of the devices in the room to active'''
-    devices= room.devices
-    for device in devices: 
-        policies = device.policies
-        for policy in policies:
-            policy.active = True
-            policy.update_policy()
+    policies = device.policies
+    for policy in policies:
+        policy.active = True
+        policy.update_policy()
+
+def block_all_domains(device: Device):
+    ''' blocks all corresponding domains of a device in pi-hole'''
+    # get domains which are not yet in pihole from device policies
+    pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
+    policies = device.policies
+    pi_domains = pi_group.domains.all()
+    pi_domain_map = build_pi_domain_map(pi_domains)        
+    new_pi_domains = get_new_pi_domains(pi_domains, policies, pi_domain_map)
+    
+    # inserting new domains in db (domain consisting of domain name and type)
+    if len(new_pi_domains) > 0:
+        pi_group.domains.extend(new_pi_domains)
+        db.session.add(pi_group)
+        db.session.flush()
+    
+    # set already exisiting domains to block
+    for domain in pi_domains:
+        domain.type = 1 # 0 = allow, 1 = block
+
+    db.session.commit()    
 
 
 def enforce_offline_room(room: Room):
     '''Blocks all domains for all devices in the room'''
     try:
-        
-        # get domains which are not yet in pihole from device policies
-        for device in room.devices:
-            pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
-            policies = device.policies
-            pi_domains = pi_group.domains.all()
-            pi_domain_map = build_pi_domain_map(pi_domains)        
-            new_pi_domains = get_new_pi_domains(pi_domains, policies, pi_domain_map)
-            
-            print("pi.domain_map before update: ", pi_domain_map)
-            # inserting new domains in db (domain consisting of domain name and type)
-            if len(new_pi_domains) > 0:
-                print("inserting new domains in db")
-                pi_group.domains.extend(new_pi_domains)
-                db.session.add(pi_group)
-                db.session.flush()
-            
-            # set already exisiting domains to block
-            for domain in pi_domains:
-                print("setting already existing domains to BLOCK")
-                domain.type = 1 # 0 = allow, 1 = block
 
-            print("pi domains after update: ", build_pi_domain_map(pi_group.domains.all()))
-            db.session.commit()    
+        for device in room.devices:
+           block_all_domains(device)
     except Exception as e:
         current_app.logger.error(f"Error while enforcing offline room: {e}")
         db.session.rollback()        
@@ -124,11 +120,29 @@ def relinquish_offline_room(room_id:int):
 
 def in_offline_room(device):
     # room status is None if device is not in a room
-    # TODO: doublecheck if this is correct
     if device.room == None or device.room.status == None:
         return False
     
     return device.room.status == RoomStatus.OFFLINE.value
+
+def enforce_device_type_policy(device_type_policy: DeviceTypePolicy):
+    devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
+    for device in devices_of_type:
+        already_offline = True
+        # check for an active device policy, if there is one, the device is not offline
+        for device_policy in device.policies:
+            if device_policy.active:
+                already_offline = False
+                break
+        if already_offline:
+            continue
+        else:
+            #set all domains to block
+            block_all_domains(device)
+            deactivate_device_policies(device)
+            
+    
+    
 
 def build_pi_domain_map(pi_domains)->dict:
     pi_domain_map = dict()

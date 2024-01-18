@@ -1,10 +1,10 @@
 from app.extensions import db
 from app.helpers.helpers import is_in_timeframe
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room, DeviceTypePolicy
-from app.constants import PolicyType, DefaultPolicyValues, RoomStatus
+from app.constants import DeviceTypeEnum, PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 
-from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, block_all_domains, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
 import datetime
 from typing import Union, Tuple
 
@@ -99,12 +99,14 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
 def activate_room_policies(room:Room):
     '''Block all domains for all the devices in the provided room'''
     enforce_offline_room(room)
-    deactivate_device_policies(room)
+    for device in room.devices:
+        deactivate_device_policies(device)
 
 def deactivate_room_policies(room:Room):
     "Re-enforce device specific polices for all the devices in the provided room"
     relinquish_offline_room(room.id)
-    activate_device_policies(room)
+    for device in room.devices:
+        activate_device_policies(device)
 
 def check_for_request_threshold_violation():
     from app.reporting.email_notification_service import send_threshold_notification_mail
@@ -158,6 +160,27 @@ def evaluate_rooms():
     all_rooms = Room.query.all()
     for room in all_rooms:
         evaluate_room_policies(room)
+
+
+def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
+    if device_type_policy.offline_mode:
+        enforce_device_type_policy(device_type_policy)
+    
+            
+
+def evaluate_device_type_policies():
+    # for each device type, check if there is an active policy
+    for device_type in DeviceTypeEnum:
+       policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == device_type.value)).scalars().all()
+        
+       for policy in policies:
+           if policy.is_active():
+               evaluate_single_device_type_policy(policy)
+    ...                
+        # if there is an activce policy and is an offline policy, go throh all devices in this type
+
+    # for each device, check if its device policies are active or not. If active, enforce policy
+    # and set their device policyies to inactive. 
 
 # TODO: if a room policy is active, the policies should not be synced to pihole
 def evaluate_monitoring_data(dataset: list):

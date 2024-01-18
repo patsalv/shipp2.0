@@ -3,14 +3,14 @@ from wtforms import StringField, PasswordField, BooleanField, RadioField, TimeFi
 from wtforms.validators import DataRequired,InputRequired, IPAddress, MacAddress, Email, Length, Regexp, EqualTo, ValidationError
 from app.models import User
 from app.extensions import db
-from app.constants import DefaultPolicyValues, DeviceType, HighLevelPolicyType
+from app.constants import DefaultPolicyValues, DeviceTypeEnum, HighLevelPolicyType
 
 
 class DeviceForm(FlaskForm):
     name = StringField('Device Name', validators=[DataRequired()])
     mac = StringField('MAC Address', validators=[DataRequired(), MacAddress()])
     ip = StringField('IP Address', validators=[DataRequired(), IPAddress()])
-    device_type = SelectField("Device Type", choices=[(DeviceType.CAMERA.value, "Camera"), (DeviceType.LIGHT.value, "Light"), (DeviceType.SOCKET.value, "Socket"), (DeviceType.VOICE_ASSISTANT.value, "Voice Assistant"), (DeviceType.TV.value, "Smart TV"), (DeviceType.SPEAKER.value, "Speaker"),(DeviceType.OTHERS.value, "Others")])
+    device_type = SelectField("Device Type", choices=[(DeviceTypeEnum.CAMERA.value, "Camera"), (DeviceTypeEnum.LIGHT.value, "Light"), (DeviceTypeEnum.SOCKET.value, "Socket"), (DeviceTypeEnum.VOICE_ASSISTANT.value, "Voice Assistant"), (DeviceTypeEnum.TV.value, "Smart TV"), (DeviceTypeEnum.SPEAKER.value, "Speaker"),(DeviceTypeEnum.OTHERS.value, "Others")])
     default_policy = RadioField('Default Policy', choices=[(DefaultPolicyValues.ALLOW_ALL.value, 'Allow all'), (DefaultPolicyValues.BLOCK_ALL.value, 'Block all')],
                                 default=DefaultPolicyValues.ALLOW_ALL.value, validators=[DataRequired()])
     
@@ -32,10 +32,10 @@ class PolicyForm(FlaskForm):
     name = StringField('Policy Name', validators=[InputRequired()])
     policy_type = RadioField("Policy Type", choices=[(HighLevelPolicyType.ROOM_POLICY.value, 'Room Policy'), (HighLevelPolicyType.DEVICE_TYPE_POLICY.value, 'Device Type Policy')],)
     rooms = SelectField('Rooms')
-    device_types = SelectField("Device Type", choices=[(DeviceType.CAMERA.value, "Camera"), (DeviceType.LIGHT.value, "Light"),
-                (DeviceType.SOCKET.value, "Socket"), (DeviceType.VOICE_ASSISTANT.value, "Voice Assistant"),
-                (DeviceType.TV.value, "Smart TV"), (DeviceType.SPEAKER.value, "Speaker"),
-                (DeviceType.OTHERS.value, "Others")])
+    device_types = SelectField("Device Type", choices=[(DeviceTypeEnum.CAMERA.value, "Camera"), (DeviceTypeEnum.LIGHT.value, "Light"),
+                (DeviceTypeEnum.SOCKET.value, "Socket"), (DeviceTypeEnum.VOICE_ASSISTANT.value, "Voice Assistant"),
+                (DeviceTypeEnum.TV.value, "Smart TV"), (DeviceTypeEnum.SPEAKER.value, "Speaker"),
+                (DeviceTypeEnum.OTHERS.value, "Others")])
     start_time=TimeField('From', validators=[InputRequired()])
     end_time=TimeField('Until', validators=[InputRequired()])
     offline_mode = BooleanField('Offline', default=True)
