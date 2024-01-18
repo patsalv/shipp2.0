@@ -66,6 +66,7 @@ def edit_device(device_id):
     form = DeviceForm()
     if form.validate_on_submit():
         device.device_name = form.name.data
+        device.device_type = form.device_type.data
         if default_policy.item != form.default_policy.data:
             default_policy.item = form.default_policy.data
         if current_config.ip_address != form.ip.data:
@@ -83,6 +84,7 @@ def edit_device(device_id):
     form.mac.data = device.mac_address
     # disable_input_field(form.mac)
     form.ip.data = current_config.ip_address
+    form.device_type.data = device.device_type.value
     form.default_policy.data = default_policy.item
     return render_template("edit-device.html", form=form)
 
