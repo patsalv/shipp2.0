@@ -1,6 +1,6 @@
 from sqlalchemy import Enum
 from app.extensions import db, cipher_suite, login_manager
-from app.constants import DeviceType, PolicyType,RoomStatus
+from app.constants import DeviceTypeEnum, PolicyType,RoomStatus
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,7 +11,7 @@ class Device(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mac_address = db.Column(db.String(17), unique=True, nullable=False)
     device_name = db.Column(db.String(64))
-    device_type = db.Column(Enum(DeviceType), nullable=False)
+    device_type = db.Column(Enum(DeviceTypeEnum), db.ForeignKey('devicetype.type'), nullable=True)
     device_configs = db.relationship('DeviceConfig', backref='device', lazy="dynamic")
     policies = db.relationship("Policy", backref='device', lazy="dynamic")
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=True)
@@ -233,6 +233,13 @@ class RoomPolicy(db.Model):
         db.session.commit()
 
 
+class DeviceType(db.Model):
+    __tablename__= 'devicetype'
+    type = db.Column(Enum(DeviceTypeEnum), primary_key=True)
+    devices = db.relationship("Device", backref='devicetype', lazy="dynamic")
+    offline = db.Column(db.Boolean, default=False, nullable=False)
+    policies = db.relationship("DeviceTypePolicy", backref='devicetype', lazy="dynamic")
+
 class DeviceTypePolicy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
@@ -241,8 +248,14 @@ class DeviceTypePolicy(db.Model):
     active = db.Column(db.Boolean, default=True, nullable=False)
     offline_mode = db.Column(db.Boolean, default=True, nullable=False)
     request_threshold = db.Column(db.Integer, nullable=True, default=None)
-    device_type = db.Column(Enum(DeviceType), nullable=False)
+    device_type = db.Column(Enum(DeviceTypeEnum), db.ForeignKey('devicetype.type'), nullable=False)
 
+    # TODO:  might want to rename this
+    def is_active(self):
+        if self.active and is_in_timeframe(self.start_time, self.end_time, datetime.now().time()):
+            return True
+        return False
+    
     def insert_policy(self):
         db.session.add(self)
         db.session.commit()
