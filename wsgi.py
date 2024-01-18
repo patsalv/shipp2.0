@@ -46,12 +46,14 @@ def execute_job():
         fetch_query_data_job()
 
 @app.cli.command()
-def execute_room_evaluation():
+def execute_highlevel_policy_evaluation():
     """Run room evaluation"""
     with app.app_context():
+        from app.policy_engine.policy_engine import evaluate_device_type_policies
         from app.policy_engine.policy_engine import evaluate_rooms
         app.logger.info("Starting room evaluation")
         evaluate_rooms()
+        evaluate_device_type_policies()
 
 @app.cli.command()
 def check_threshold():
@@ -91,6 +93,29 @@ def db_reset():
         db.create_all()
         app.logger.info("Database reset")
 
+
+@app.cli.command()
+def db_add_device_types():
+    """Reset database"""
+    with app.app_context():
+        from app.models.database_model import DeviceType
+        from app.constants import DeviceTypeEnum
+        for device_type_enum in DeviceTypeEnum:
+            device_type = DeviceType(type=device_type_enum.value)
+            db.session.add(device_type)
+            db.session.commit()
+
+@app.cli.command()
+def init_mock_devices():
+    """initialize mock devies"""
+    with app.app_context():
+        from app.constants import DeviceTypeEnum
+        from app.helpers.helpers import initialize_mock_device
+        initialize_mock_device("Ikea Tradfri Hub","8C:45:00:69:3B:B7", "192.168.188.26", DeviceTypeEnum.LIGHT)
+        initialize_mock_device("Security Camera","40:ED:00:20:B3:B1", "192.168.188.29", DeviceTypeEnum.CAMERA)
+        initialize_mock_device("Smart Socket Bed","18:DE:50:77:01:4C", "192.168.188.31", DeviceTypeEnum.SOCKET)
+        initialize_mock_device("Smart Socket Desk","18:DE:50:76:FD:E9", "192.168.188.34", DeviceTypeEnum.SOCKET)
+       
 
 @app.cli.command()
 def db_update():

@@ -266,7 +266,7 @@ def highlevel_policies():
             current_app.logger.error(f"Error while updating highlevel policies: {e}")
             db.session.rollback()
             return render_template("policies/add-highlevel-policy.html",form=form, error=e)
-    return render_template("policies/add-highlevel-policy.html",form=form, error=e)
+    return render_template("policies/add-highlevel-policy.html",form=form)
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required

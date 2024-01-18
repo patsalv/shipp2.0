@@ -102,9 +102,9 @@ def block_all_domains(device: Device):
 def enforce_offline_room(room: Room):
     '''Blocks all domains for all devices in the room'''
     try:
-
         for device in room.devices:
            block_all_domains(device)
+           deactivate_device_policies(device)
     except Exception as e:
         current_app.logger.error(f"Error while enforcing offline room: {e}")
         db.session.rollback()        
@@ -114,9 +114,7 @@ def relinquish_offline_room(room_id:int):
     devices = db.session.execute(db.select(Device).where(Device.room_id == room_id)).scalars().all()
     for device in devices:
         sync_device_policies(device)
-        pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
-        pi_domains_after_unblocking = pi_group.domains.all()
-        print("pi_domains after relinquish", build_pi_domain_map(pi_domains_after_unblocking))
+        activate_device_policies(device)
 
 def in_offline_room(device):
     # room status is None if device is not in a room
@@ -125,23 +123,22 @@ def in_offline_room(device):
     
     return device.room.status == RoomStatus.OFFLINE.value
 
+
 def enforce_device_type_policy(device_type_policy: DeviceTypePolicy):
+    '''Blocks all domains for all devices in the device type'''
     devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
     for device in devices_of_type:
-        already_offline = True
-        # check for an active device policy, if there is one, the device is not offline
-        for device_policy in device.policies:
-            if device_policy.active:
-                already_offline = False
-                break
-        if already_offline:
-            continue
-        else:
-            #set all domains to block
-            block_all_domains(device)
-            deactivate_device_policies(device)
-            
-    
+        deactivate_device_policies(device)
+        block_all_domains(device)
+        
+        
+                    
+def relinquish_device_type_policy(device_type_policy: DeviceTypePolicy):
+    '''Restores the policies of the devices affected by the device type policy'''
+    devices = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
+    for device in devices:
+        activate_device_policies(device)
+        sync_device_policies(device)
     
 
 def build_pi_domain_map(pi_domains)->dict:

@@ -3,8 +3,9 @@ from app.helpers.helpers import is_in_timeframe
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room, DeviceTypePolicy
 from app.constants import DeviceTypeEnum, PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
+from app.models.database_model import DeviceType
 
-from app.policy_engine.database_sync import activate_device_policies, block_all_domains, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, block_all_domains, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_device_type_policy, relinquish_offline_room, sync_policies_to_pihole
 import datetime
 from typing import Union, Tuple
 
@@ -162,11 +163,28 @@ def evaluate_rooms():
         evaluate_room_policies(room)
 
 
+# TODO: improve performance -> cases where early return would make senes?
 def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
-    if device_type_policy.offline_mode:
-        enforce_device_type_policy(device_type_policy)
-    
-            
+    '''Evaluates a single DeviceTypePolicy and activates/deactivates it accordingly. 
+    Returns "enforced" if a policy has been enforced and None otherwise '''
+    try:
+        device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type)).scalars().one()
+    except Exception as e:
+        print("An error occured when querying the db: ", e)
+        return 
+    # check ¡f policy is currently active
+    if device_type_policy.is_active():
+        # check if it is an offline policy and if the device is not already offline
+        if device_type_policy.offline_mode and not device_type_obj.offline:
+            #see if the device type is already offline
+            enforce_device_type_policy(device_type_policy)
+    else:
+        if device_type_policy.offline_mode:
+            #see if the device type is still offline
+            if device_type_obj.offline:
+                relinquish_device_type_policy(device_type_policy)
+            # TODO: Think about checking request threshold here
+        
 
 def evaluate_device_type_policies():
     # for each device type, check if there is an active policy
@@ -174,13 +192,8 @@ def evaluate_device_type_policies():
        policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == device_type.value)).scalars().all()
         
        for policy in policies:
-           if policy.is_active():
-               evaluate_single_device_type_policy(policy)
-    ...                
-        # if there is an activce policy and is an offline policy, go throh all devices in this type
+            evaluate_single_device_type_policy(policy)
 
-    # for each device, check if its device policies are active or not. If active, enforce policy
-    # and set their device policyies to inactive. 
 
 # TODO: if a room policy is active, the policies should not be synced to pihole
 def evaluate_monitoring_data(dataset: list):
