@@ -25,17 +25,18 @@ def get_enforced_room_policy(room_id:int):
         
     return None
 
+# TODO: consider putting this in helpers.py
 def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time, start_time2: datetime.time, end_time2: datetime.time) -> bool:
-    # check if start_time1 is in timeframe of start_time2 and end_time2
+    #check if start_time2 is in timeframe of start_time1 and end_time1
     if is_in_timeframe(start_time1, end_time1, start_time2):
         return True
-    #check if end_time1 is in timeframe of start_time1 and end_time2
+    #check if end_time2 is in timeframe of start_time1 and end_time1
     if is_in_timeframe(start_time1, end_time1, end_time2):
         return True
-    #check if start_time2 is in timeframe of start_time1 and end_time1
+
+    # case where one time frame is completely within another
     if is_in_timeframe(start_time2, end_time2, start_time1):
         return True
-    #check if end_time2 is in timeframe of start_time1 and end_time1
     if is_in_timeframe(start_time2, end_time2, end_time1):
         return True
     
@@ -63,10 +64,8 @@ def check_for_room_policy_conflicts(new_policy: RoomPolicy )-> Union[Tuple[bool,
     
 
     for type in relevant_device_types:
-        print("type: ", type)
         device_type_policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == type)).scalars().all()
         for device_type_policy in device_type_policies:
-            print("device_type_policies.device_type: ", device_type_policy.device_type)
             if overlapping_timeframes(new_policy.start_time, new_policy.end_time, device_type_policy.start_time, device_type_policy.end_time):
                 return True, device_type_policy
 

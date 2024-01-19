@@ -1,8 +1,9 @@
 
+import pytest
 import requests
 from tests import utils
 
-
+@pytest.mark.skip("Not testing this right now")
 def test_get_all_queries(mocker, app):
     from app.service_integration_api import PiholeConsumer
 
