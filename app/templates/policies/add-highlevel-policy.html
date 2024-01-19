@@ -23,10 +23,12 @@ block content %}
 
       <div class="mb-6">
         {{ form.policy_type.label(class_="form-label") }}
-        <div class="flex items-center mb-4">
-          {% for subfield in form.policy_type %} {{
-          subfield(class_="form-radio-input") }} {{
-          subfield.label(class_="form-radio-label") }}
+        <div class="flex items-center mb-4 justify-between">
+          {% for subfield in form.policy_type %}
+          <div>
+            {{ subfield(class_="form-radio-input") }} {{
+            subfield.label(class_="form-radio-label") }}
+          </div>
           <div class="w-3"></div>
           {% endfor %}
         </div>
