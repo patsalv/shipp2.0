@@ -239,8 +239,10 @@ def highlevel_policies():
     form=PolicyForm()
     all_rooms = Room.query.all()
     form.rooms.choices= [(room.id,room.name) for room in all_rooms] 
+    form.request_threshold.data = 100
+    TEMPLATE_PATH = "policies/add-highlevel-policy.html"
     if(request.method=="GET"):
-        return render_template("policies/add-highlevel-policy.html", form=form)
+        return render_template(TEMPLATE_PATH, form=form)
     
     if(request.method=="POST" and form.validate_on_submit()):
         try:
@@ -267,8 +269,8 @@ def highlevel_policies():
         except Exception as e:
             current_app.logger.error(f"Error while updating highlevel policies: {e}")
             db.session.rollback()
-            return render_template("policies/add-highlevel-policy.html",form=form, error=e)
-    return render_template("policies/add-highlevel-policy.html",form=form)
+            return render_template(TEMPLATE_PATH,form=form, error=e)
+    return render_template(TEMPLATE_PATH,form=form)
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])
 @login_required

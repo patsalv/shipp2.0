@@ -1,7 +1,7 @@
 from app.extensions import db
 from app.helpers.helpers import is_in_timeframe
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room, DeviceTypePolicy
-from app.constants import DeviceTypeEnum, PolicyType, DefaultPolicyValues, RoomStatus
+from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 from app.models.database_model import DeviceType
 
@@ -10,31 +10,13 @@ import datetime
 from typing import Union, Tuple
 
 
-def get_enforced_room_policy(room_id:int):
-    ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
-    current_time = datetime.datetime.now().time()
-    room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == room_id)).scalars().all()
-    
-
-    for room_policy in room_policies:
-        if not room_policy.active:
-            return None
-        
-        if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time):
-            return room_policy
-        
-    return None
 
 # TODO: consider putting this in helpers.py
 def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time, start_time2: datetime.time, end_time2: datetime.time) -> bool:
-    #check if start_time2 is in timeframe of start_time1 and end_time1
     if is_in_timeframe(start_time1, end_time1, start_time2):
         return True
-    #check if end_time2 is in timeframe of start_time1 and end_time1
     if is_in_timeframe(start_time1, end_time1, end_time2):
         return True
-
-    # case where one time frame is completely within another
     if is_in_timeframe(start_time2, end_time2, start_time1):
         return True
     if is_in_timeframe(start_time2, end_time2, end_time1):
@@ -107,28 +89,35 @@ def deactivate_room_policies(room:Room):
     relinquish_offline_room(room.id)
     for device in room.devices:
         activate_device_policies(device)
-
-def check_for_request_threshold_violation():
-    from app.reporting.email_notification_service import send_threshold_notification_mail
-    from app.monitors.pihole_monitor import last_hour_summary
-    dataframe = last_hour_summary()
     
-    #get all currently active room policies. 
-    all_rooms = Room.query.all()
-    for room in all_rooms:
-        enforced_policy = get_enforced_room_policy(room.id)
-        if enforced_policy is not None:
-            # go through each device in the room and check the number of requests
-            for device in room.devices:
-                # check if the number of requests for the device exceeds the threshold
-                if dataframe[dataframe['client_name'] == device.device_name].shape[0] > 1:
-                    print("Threshold exceeded. Device: ", device.device_name, " Room: ", room.name)
-                    # send email with information about the violation 
-                    # TODO: gather all violations, if multiple exist, and send them togetehr in one mail
-                    send_threshold_notification_mail(enforced_policy, device)
-            
-        else:
-            print("no active policy")
+
+def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePolicy] ,policy_type:HighLevelPolicyType):
+    from app.reporting.email_notification_service import send_threshold_notification_mail
+    from app.monitors.pihole_monitor import last_n_minutes_summary
+
+
+    unix_now = datetime.now().timestamp()
+    seconds_since_start = unix_now - policy.start_time.timestamp()
+    relevant_timeframe_in_seconds = seconds_since_start if seconds_since_start < 3600 else 3600
+    
+    dataframe = last_n_minutes_summary(relevant_timeframe_in_seconds)
+    
+    # check if policy is room policy or device type policy
+    if(policy_type.value == "ROOM_POLICY"):
+        devices = db.session.execute(db.select(Device).where(Device.room_id == policy.room_id)).scalars().all()
+
+    elif policy_type.value == "DEVICE_TYPE_POLICY":
+        devices = db.session.execute(db.select(Device).where(Device.device_type.value == policy.device_type.value)).scalars().all()
+
+    # get all devices affected by the policy & go through each device and check the number of requests
+    for device in devices:
+        # check if the number of requests for the device exceeds the threshold
+        if dataframe[dataframe['client_name'] == device.device_name].shape[0] > policy.request_threshold and not policy.threshold_warning_sent:
+            # send email with information about the violation 
+            # TODO: gather all violations, if multiple exist, and send them togetehr in one mail
+            send_threshold_notification_mail(policy,policy_type ,device)
+            policy.threshold_warning_sent = True
+            policy.update_policy()
 
 
 def evaluate_room_policies(room:Room) -> None:
@@ -137,19 +126,22 @@ def evaluate_room_policies(room:Room) -> None:
     the actual room status and activates/deactivates them accordingly.
     '''   
     has_active_policy = room.has_active_offline_policy()
-
+    active_policy = None
+    if has_active_policy:
+        active_policy = room.get_enforced_room_policy()
+        check_for_request_threshold_violation(active_policy, HighLevelPolicyType.ROOM_POLICY)
+ 
     need_update= room.needs_status_update()
+    
     if need_update:
         try:
             if has_active_policy:
+                active_policy.reset_threshold_warning_sent()
                 activate_room_policies(room)
                 room.status = RoomStatus.OFFLINE.value
-                #deactivate_device_policies(room)
-            else:
+            else: 
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
                 deactivate_room_policies(room)
-                #activate_device_policies(room)
-    
             room.update_room()
         except Exception as e:
             db.rollback()
@@ -182,6 +174,8 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
             #see if the device type is still offline
             if device_type_obj.offline:
                 relinquish_device_type_policy(device_type_policy)
+                if device_type_policy.threshold_warning_sent:
+                    device_type_policy.reset_threshold_warning_sent()
             # TODO: Think about checking request threshold here
         
 

@@ -5,10 +5,13 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.header import Header
 from flask import render_template, current_app
+from app.constants import HighLevelPolicyType
+from app.models.database_model import DeviceTypePolicy
 from app.monitors.pihole_monitor import weekly_summary
 from app.reporting.pihole_reports import figure_to_byte_img, create_stacked_bar_chart, create_pie_chart
 from app.models import User, Device, RoomPolicy
 from app.extensions import db
+from typing import Union
 
 
 class EmailBuilder:
@@ -85,12 +88,12 @@ def create_weekly_email(user: User) -> MIMEMultipart:
     return msg
 
 
-def create_threshold_notification_mail(user:User, room_policy: RoomPolicy, device: Device)->MIMEMultipart:
+def create_threshold_notification_mail(user:User, policy: Union[RoomPolicy,DeviceTypePolicy], device: Device)->MIMEMultipart:
     recipient = user.email_address
     username = user.username
-    print("Warning. The device", device.device_name ," surpassed the request threshold defined in policy ", room_policy.name ,".")
+    print("Warning. The device", device.device_name ," surpassed the request threshold defined in policy ", policy.name ,".")
     # text_content = str("Warning. The device", device.device_name ," surpassed the request threshold defined in policy ", room_policy.name ,".")
-    text_content="Test the mail lol"
+    text_content="Test the mail"
     #-----------------only for testing
      # Get the weekly summary from pihole monitor
     df = weekly_summary()
@@ -112,11 +115,11 @@ def send_weekly_emails():
     for msg in generate_weekly_emails():
         send_email(msg)
 
-def send_threshold_notification_mail(room_policy: RoomPolicy, device: Device):
+def send_threshold_notification_mail(policy: Union[RoomPolicy, DeviceTypePolicy],device: Device):
     users = db.session.execute(db.select(User).where(User.email_address != None)).scalars().all() 
     for user in users:
         print("email address:", user.email_address)
-        msg = create_threshold_notification_mail(user, room_policy, device)
+        msg = create_threshold_notification_mail(user, policy, device)
         send_email(msg)
 
 

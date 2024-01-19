@@ -22,7 +22,7 @@ def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_
     
 
 def initialize_mock_device(name:str, mac: str, ip: str,device_type: DeviceTypeEnum):
-    from app.models.database_model import Device, DeviceConfig, Policy, DeviceType
+    from app.models.database_model import Device, DeviceConfig, Policy
     from app.constants import PolicyType
     device = Device(mac_address=mac, device_name=name)
     device.device_configs.append(DeviceConfig(ip_address=ip))

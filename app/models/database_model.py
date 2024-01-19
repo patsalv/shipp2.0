@@ -187,27 +187,18 @@ class Room(db.Model):
     
         return False
 
+    def get_enforced_room_policy(self):
+        ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
+        current_time = datetime.datetime.now().time()
 
-class HighLevelPolicy(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64), nullable=False)
-    start_time = db.Column(db.Time, nullable=False)
-    end_time = db.Column(db.Time, nullable=False)
-    active = db.Column(db.Boolean, default=True, nullable=False)
-    offline_mode = db.Column(db.Boolean, default=True, nullable=False)
-    request_threshold = db.Column(db.Integer, nullable=True, default=None)
-
-    def insert_room_policy(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def update_room_policy(self):
-        db.session.add(self)
-        db.session.commit()
-
-    def delete_room_policy(self):
-        db.session.delete(self)
-        db.session.commit()
+        for room_policy in self.policies:
+            if not room_policy.active:
+                return None
+            
+            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time):
+                return room_policy
+            
+        return None
 
 
 class RoomPolicy(db.Model):
@@ -219,6 +210,7 @@ class RoomPolicy(db.Model):
     offline_mode = db.Column(db.Boolean, default=True, nullable=False)
     request_threshold = db.Column(db.Integer, nullable=True, default=None)
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
+    threshold_warning_sent = db.Column(db.Boolean, default=False, nullable=False)
 
     def insert_room_policy(self):
         db.session.add(self)
@@ -230,6 +222,11 @@ class RoomPolicy(db.Model):
 
     def delete_room_policy(self):
         db.session.delete(self)
+        db.session.commit()
+
+    def reset_threshold_warning_sent(self):
+        self.threshold_warning_sent = False
+        db.session.add(self)
         db.session.commit()
 
 
@@ -249,6 +246,7 @@ class DeviceTypePolicy(db.Model):
     offline_mode = db.Column(db.Boolean, default=True, nullable=False)
     request_threshold = db.Column(db.Integer, nullable=True, default=None)
     device_type = db.Column(Enum(DeviceTypeEnum), db.ForeignKey('devicetype.type'), nullable=False)
+    threshold_warning_sent = db.Column(db.Boolean, default=False, nullable=False)
 
     # TODO:  might want to rename this
     def is_active(self):
@@ -266,6 +264,11 @@ class DeviceTypePolicy(db.Model):
 
     def delete_policy(self):
         db.session.delete(self)
+        db.session.commit()
+
+    def reset_threshold_warning_sent(self):
+        self.threshold_warning_sent = False
+        db.session.add(self)
         db.session.commit()
 
 # TODO: Evaluate if this is needed or if we just use env variables (Would need API type / Base URL / Auth type...)

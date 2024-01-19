@@ -78,11 +78,12 @@ def last_24h_summary():
     
     return convert_to_dataframe(dataset)
 
-def last_hour_summary():
-    dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - 3600,
+def last_n_minutes_summary(minutes: int):
+    dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - (minutes*60),
                                    int(datetime.now().timestamp()))
     
     return convert_to_dataframe(dataset)
+
 
 def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
     # Load Pi-hole configuration and initialize consumer
