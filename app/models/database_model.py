@@ -189,7 +189,7 @@ class Room(db.Model):
 
     def get_enforced_room_policy(self):
         ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
-        current_time = datetime.datetime.now().time()
+        current_time = datetime.now().time()
 
         for room_policy in self.policies:
             if not room_policy.active:
@@ -216,7 +216,7 @@ class RoomPolicy(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    def update_room_policy(self):
+    def update_policy(self):
         db.session.add(self)
         db.session.commit()
 

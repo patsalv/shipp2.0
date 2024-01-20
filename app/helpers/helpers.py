@@ -3,6 +3,15 @@ import datetime
 from app.constants import DeviceTypeEnum
 
 
+def get_start_time_in_unix(start_time: datetime.time) -> int:
+    '''
+    Converts start_time to unix time
+    '''
+   # check if start_time was yesterday or today
+    if start_time > datetime.datetime.now().time():
+        return int(datetime.datetime.combine(datetime.date.today() - datetime.timedelta(days=1), start_time).timestamp())
+    
+    return int(datetime.datetime.combine(datetime.date.today(), start_time).timestamp())
 
 # this is not yet perfect.
 def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_check: datetime.time) -> bool:

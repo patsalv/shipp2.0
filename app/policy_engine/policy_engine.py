@@ -1,18 +1,20 @@
+import time
 from app.extensions import db
-from app.helpers.helpers import is_in_timeframe
+from app.helpers.helpers import get_start_time_in_unix, is_in_timeframe
 from app.models import Device, DeviceConfig, Policy, RoomPolicy, Room, DeviceTypePolicy
 from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyType, DefaultPolicyValues, RoomStatus
 from flask import current_app
 from app.models.database_model import DeviceType
 
-from app.policy_engine.database_sync import activate_device_policies, block_all_domains, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_device_type_policy, relinquish_offline_room, sync_policies_to_pihole
-import datetime
+from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_device_type_policy, relinquish_offline_room, sync_policies_to_pihole
+from datetime import datetime
 from typing import Union, Tuple
 
 
 
 # TODO: consider putting this in helpers.py
-def overlapping_timeframes(start_time1: datetime.time, end_time1: datetime.time, start_time2: datetime.time, end_time2: datetime.time) -> bool:
+def overlapping_timeframes(start_time1: time, end_time1: time, start_time2: time, end_time2: time) -> bool:
+    
     if is_in_timeframe(start_time1, end_time1, start_time2):
         return True
     if is_in_timeframe(start_time1, end_time1, end_time2):
@@ -96,8 +98,9 @@ def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePo
     from app.monitors.pihole_monitor import last_n_minutes_summary
 
 
-    unix_now = datetime.now().timestamp()
-    seconds_since_start = unix_now - policy.start_time.timestamp()
+    unix_now = int(datetime.now().timestamp())
+    start_time_unix = get_start_time_in_unix(policy.start_time)
+    seconds_since_start = unix_now - start_time_unix
     relevant_timeframe_in_seconds = seconds_since_start if seconds_since_start < 3600 else 3600
     
     dataframe = last_n_minutes_summary(relevant_timeframe_in_seconds)
@@ -115,7 +118,7 @@ def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePo
         if dataframe[dataframe['client_name'] == device.device_name].shape[0] > policy.request_threshold and not policy.threshold_warning_sent:
             # send email with information about the violation 
             # TODO: gather all violations, if multiple exist, and send them togetehr in one mail
-            send_threshold_notification_mail(policy,policy_type ,device)
+            send_threshold_notification_mail(policy ,device)
             policy.threshold_warning_sent = True
             policy.update_policy()
 
