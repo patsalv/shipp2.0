@@ -1,5 +1,6 @@
 # App routing
 import copy
+import traceback
 from flask import Blueprint, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
@@ -8,7 +9,7 @@ from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import HighLevelPolicyType, PolicyType, RoomStatus
 from app.models.database_model import DeviceTypePolicy
-from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies
+from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies, evaluate_single_device_type_policy
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -34,11 +35,11 @@ def devices():
     return render_template("devices.html", devices=active_devices)
 
 
-@bp.route("/add-device", methods=["GET", "POST"])#@login_required
+@login_required
+@bp.route("/add-device", methods=["GET", "POST"])#
 def add_device():
     form = DeviceForm()
     if form.validate_on_submit(): 
-        print("add_device form successfully validated")
         device = Device(mac_address=form.mac.data, device_name=form.name.data, device_type=form.device_type.data)
         device.device_configs.append(DeviceConfig(ip_address=form.ip.data))
         default_policy = Policy(policy_type=PolicyType.DEFAULT_POLICY.value,
@@ -53,7 +54,6 @@ def add_device():
         finally:
             return redirect(url_for("main.devices"))
     
-    print("returning the add-device.html page again... validation failed")    
     return render_template("add-device.html", form=form)
 
 
@@ -244,7 +244,12 @@ def highlevel_policies():
     if(request.method=="GET"):
         return render_template(TEMPLATE_PATH, form=form)
     
-    if(request.method=="POST" and form.validate_on_submit()):
+
+    form.validate()
+    for error in form.errors.items():
+        print("Error: ", error)
+
+    if(request.method=="POST" ):
         try:
             # Handle room policy
             if form.policy_type.data == HighLevelPolicyType.ROOM_POLICY.value:
@@ -264,12 +269,14 @@ def highlevel_policies():
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 device_type_policy.insert_policy()
                 # add something like evaluate room policy but for device type policies
+                evaluate_single_device_type_policy(device_type_policy)
                 # return to policy overview
                 return redirect(url_for("main.policy_overview"))
         except Exception as e:
-            current_app.logger.error(f"Error while updating highlevel policies: {e}")
+            current_app.logger.error(f"Error while updating highlevel policies: {e}. Stack:  " , traceback.format_exc())
             db.session.rollback()
             return render_template(TEMPLATE_PATH,form=form, error=e)
+        
     return render_template(TEMPLATE_PATH,form=form)
 
 @bp.route("/room/<int:room_id>/policies", methods=["GET", "POST"])

@@ -69,9 +69,13 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
     for device in devices_of_type:
         if device.room_id is None:
             continue
-
          # if device exists in a room, check if there policy conflicts with the the room policies.
-        room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == device.room_id)).scalars().all()
+        try:
+            room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == device.room_id)).scalars().all()
+        except Exception as e:
+            print("No room policies found. Error: ", e )
+            return False, None
+        
         if room_policies:
             for room_policy in room_policies:
                 if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
@@ -83,14 +87,12 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
 def activate_room_policies(room:Room):
     '''Block all domains for all the devices in the provided room'''
     enforce_offline_room(room)
-    for device in room.devices:
-        deactivate_device_policies(device)
+    
 
 def deactivate_room_policies(room:Room):
     "Re-enforce device specific polices for all the devices in the provided room"
     relinquish_offline_room(room.id)
-    for device in room.devices:
-        activate_device_policies(device)
+    
     
 
 def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePolicy] ,policy_type:HighLevelPolicyType):
@@ -162,10 +164,11 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
     '''Evaluates a single DeviceTypePolicy and activates/deactivates it accordingly. 
     Returns "enforced" if a policy has been enforced and None otherwise '''
     try:
-        device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type)).scalars().one()
+        device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
+        
     except Exception as e:
         print("An error occured when querying the db: ", e)
-        return 
+        return
     # check ¡f policy is currently active
     if device_type_policy.is_active():
         # check if it is an offline policy and if the device is not already offline
@@ -179,7 +182,6 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
                 relinquish_device_type_policy(device_type_policy)
                 if device_type_policy.threshold_warning_sent:
                     device_type_policy.reset_threshold_warning_sent()
-            # TODO: Think about checking request threshold here
         
 
 def evaluate_device_type_policies():

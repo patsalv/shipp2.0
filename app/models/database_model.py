@@ -237,6 +237,10 @@ class DeviceType(db.Model):
     offline = db.Column(db.Boolean, default=False, nullable=False)
     policies = db.relationship("DeviceTypePolicy", backref='devicetype', lazy="dynamic")
 
+    def update(self):
+        db.session.add(self)
+        db.session.commit()
+
 class DeviceTypePolicy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)

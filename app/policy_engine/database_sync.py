@@ -3,7 +3,7 @@ from app.extensions import db
 from app.constants import PolicyType, RoomStatus
 from flask import current_app
 
-from app.models.database_model import Policy
+from app.models.database_model import DeviceType, Policy
 
 
 def sync_policies_to_pihole():
@@ -30,7 +30,6 @@ def sync_device_policies(device):
         pi_domains = pi_group.domains.all()
         pi_domain_map = build_pi_domain_map(pi_domains)
         policy_type_to_pi_type = {PolicyType.ALLOW.value: 0, PolicyType.BLOCK.value: 1}
-        print(pi_domain_map)# to debug
         max_date_modified = 0
         if len(pi_domains) > 0:
             max_date_modified = max(pi_domains, key=lambda domain: domain.date_modified).date_modified
@@ -71,7 +70,7 @@ def deactivate_device_policies(device: Device ):
         print("An error occured while deactivation_device_policies:  ", e)
 
 def activate_device_policies(device: Device ):
-    '''Sets all policies of the devices in the room to active'''
+    '''Sets all policies of a device to active'''
     policies = device.policies
     for policy in policies:
         policy.active = True
@@ -126,20 +125,29 @@ def in_offline_room(device):
 
 def enforce_device_type_policy(device_type_policy: DeviceTypePolicy):
     '''Blocks all domains for all devices in the device type'''
+    current_app.logger.info("Enforcing device type policy...")
     devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
+    device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
+    
+    
     for device in devices_of_type:
         deactivate_device_policies(device)
         block_all_domains(device)
-        
-        
+    
+    device_type.offline = True
+    device_type.update()
                     
 def relinquish_device_type_policy(device_type_policy: DeviceTypePolicy):
     '''Restores the policies of the devices affected by the device type policy'''
+    current_app.logger("Relinquishing device type policy...")
     devices = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
+    device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
+
     for device in devices:
         activate_device_policies(device)
         sync_device_policies(device)
-    
+    device_type.offline = False
+    device_type.update()
 
 def build_pi_domain_map(pi_domains)->dict:
     pi_domain_map = dict()
@@ -175,7 +183,7 @@ def get_new_pi_domains(pi_domains, policies, pi_domain_map):
     return new_pi_domains
 
 def retreive_policies_demanding_action(policies:Device.policies, max_date_modified:int, pi_domain_map:dict, policy_type_to_pi_type:dict )->tuple[set, set]:
-    """ retreive new policies and old policies that have to be re-enforced after a domain has been blocked by a room policy"""
+    """ Retreive new policies and old policies that have to be re-enforced after a domain has been blocked by a room policy"""
     brand_new_policies = set()
     policies_demanding_update = set()
 
@@ -183,15 +191,12 @@ def retreive_policies_demanding_action(policies:Device.policies, max_date_modifi
         if policy.policy_type == PolicyType.DEFAULT_POLICY.value:
             continue
         elif policy.date_modified > max_date_modified: # new or modified policies
-            print("inside new or modified policies")
             if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
-                print("changed policy demanding update")
                 policies_demanding_update.add(policy)
             else:
                 brand_new_policies.add(policy)
         else: # old unmodified policies
             if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
-                print("old policy demanding domain update")
                 policies_demanding_update.add(policy)
 
 

@@ -33,6 +33,8 @@ def is_in_timeframe(start_time: datetime.time, end_time: datetime.time, time_to_
 def initialize_mock_device(name:str, mac: str, ip: str,device_type: DeviceTypeEnum):
     from app.models.database_model import Device, DeviceConfig, Policy
     from app.constants import PolicyType
+    from app.service_integration_api.pihole_integration_db import init_pihole_device
+
     device = Device(mac_address=mac, device_name=name)
     device.device_configs.append(DeviceConfig(ip_address=ip))
     default_policy = Policy(policy_type=PolicyType.DEFAULT_POLICY.value,
@@ -40,4 +42,5 @@ def initialize_mock_device(name:str, mac: str, ip: str,device_type: DeviceTypeEn
     device.policies.append(default_policy)
     device.device_type = device_type.value
     device.insert_device()
+    init_pihole_device(device)
 
