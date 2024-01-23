@@ -173,7 +173,7 @@ class Room(db.Model):
         for room_policy in room_policies:
             if not(room_policy.offline_mode):
                 continue
-            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time) and room_policy.active:
+            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True) and room_policy.active:
                 return True
 
         return False    
@@ -195,7 +195,7 @@ class Room(db.Model):
             if not room_policy.active:
                 return None
             
-            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time):
+            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True):
                 return room_policy
             
         return None
@@ -254,7 +254,7 @@ class DeviceTypePolicy(db.Model):
 
     # TODO:  might want to rename this
     def is_active(self):
-        if self.active and is_in_timeframe(self.start_time, self.end_time, datetime.now().time()):
+        if self.active and is_in_timeframe(self.start_time, self.end_time, datetime.now().time(), include_start=True):
             return True
         return False
     

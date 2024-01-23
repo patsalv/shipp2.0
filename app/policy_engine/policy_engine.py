@@ -15,13 +15,14 @@ from typing import Union, Tuple
 # TODO: consider putting this in helpers.py
 def overlapping_timeframes(start_time1: time, end_time1: time, start_time2: time, end_time2: time) -> bool:
     
-    if is_in_timeframe(start_time1, end_time1, start_time2):
+    #include_start = False, since we allow to start a new policy at the same time the old one ends
+    if is_in_timeframe(start_time1, end_time1, start_time2, include_start=False):
         return True
-    if is_in_timeframe(start_time1, end_time1, end_time2):
+    if is_in_timeframe(start_time1, end_time1, end_time2,include_start=False):
         return True
-    if is_in_timeframe(start_time2, end_time2, start_time1):
+    if is_in_timeframe(start_time2, end_time2, start_time1,include_start=False):
         return True
-    if is_in_timeframe(start_time2, end_time2, end_time1):
+    if is_in_timeframe(start_time2, end_time2, end_time1, include_start=False):
         return True
     
     return False
@@ -176,6 +177,7 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
             #see if the device type is already offline
             enforce_device_type_policy(device_type_policy)
     else:
+        current_app.logger.info("Policy", device_type_policy.name , "is not active")
         if device_type_policy.offline_mode:
             #see if the device type is still offline
             if device_type_obj.offline:

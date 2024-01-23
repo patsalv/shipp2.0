@@ -23,6 +23,7 @@
           <tr>
             <th scope="col" class="px-6 py-3">Policy Name</th>
             <th scope="col" class="px-6 py-3">Room</th>
+            <th scope="col" class="px-6 py-3">Request Threshold</th>
             <th scope="col" class="px-6 py-3">Start</th>
             <th scope="col" class="px-6 py-3">End</th>
             <th scope="col" class="px-6 py-3">Action</th>
@@ -37,6 +38,7 @@
                 {{ room_policy.name }}
               </th>
               <td class="px-6 py-4">{{ room_policy.room.name }} </td>
+              <td class="px-6 py-4">{{ room_policy.request_threshold }} </td>
               <td class="px-6 py-4">{{ room_policy.start_time }}</td>
               <td class="px-6 py-4">{{ room_policy.end_time }}</td>
               <td class="px-6 py-4 text-red-600">
@@ -62,6 +64,7 @@
         <tr>
           <th scope="col" class="px-6 py-3">Policy Name</th>
           <th scope="col" class="px-6 py-3">Device Type</th>
+          <th scope="col" class="px-6 py-3">Request Threshold</th>
           <th scope="col" class="px-6 py-3">Start</th>
           <th scope="col" class="px-6 py-3">End</th>
           <th scope="col" class="px-6 py-3">Action</th>
@@ -81,6 +84,7 @@
             {{ policy.name }}
           </th>
           <td class="px-6 py-4">{{policy.device_type.value}} </td>
+          <td class="px-6 py-4">{{policy.request_threshold}} </td>
           <td class="px-6 py-4">{{ policy.start_time }}</td>
           <td class="px-6 py-4">{{ policy.end_time }}</td>
           <td class="px-6 py-4 text-red-600">

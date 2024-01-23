@@ -179,6 +179,7 @@ def get_new_pi_domains(pi_domains, policies, pi_domain_map):
     new_pi_domains = []
     for domain in new_domains:
         new_pi_domains.append(Domainlist(type=1, domain=domain))
+        current_app.logger.info(f"get_new_pi_domains: Adding new domain to pi-hole: {domain}")
 
     return new_pi_domains
 

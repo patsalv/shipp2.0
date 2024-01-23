@@ -3,7 +3,7 @@ from app.helpers.helpers import is_in_timeframe
 from app.policy_engine.policy_engine import overlapping_timeframes
 
 
-def test_is_in_timeframe():
+def test_is_in_timeframe_include_start():
     start_time = datetime.time(23, 0, 0)
     end_time = datetime.time(23, 30, 0)
 
@@ -11,9 +11,21 @@ def test_is_in_timeframe():
     on_start_time = datetime.time(23, 0, 0)
     on_end_time = datetime.time(23, 30, 0)
 
-    assert is_in_timeframe(start_time, end_time, time_between) == True  
-    assert is_in_timeframe(start_time, end_time, on_start_time) == True
-    assert is_in_timeframe(start_time, end_time, on_end_time) == False
+    assert is_in_timeframe(start_time, end_time, time_between, include_start=True) == True  
+    assert is_in_timeframe(start_time, end_time, on_start_time, include_start=True) == True
+    assert is_in_timeframe(start_time, end_time, on_end_time, include_start=True) == False
+
+def test_is_in_timeframe_exclude_start():
+    start_time = datetime.time(23, 0, 0)
+    end_time = datetime.time(23, 30, 0)
+
+    time_between = datetime.time(23, 15, 0)
+    on_start_time = datetime.time(23, 0, 0)
+    on_end_time = datetime.time(23, 30, 0)
+
+    assert is_in_timeframe(start_time, end_time, time_between, include_start=False) == True  
+    assert is_in_timeframe(start_time, end_time, on_start_time, include_start=False) == False
+    assert is_in_timeframe(start_time, end_time, on_end_time, include_start=False) == False
 
 
 def test_overlapping_time_over_midnight():
