@@ -40,9 +40,9 @@ def sync_device_policies(device):
         new_pi_domains = []
 
         for policy in brand_new_policies:
-            type = policy_type_to_pi_type[policy.policy_type]
+            p_type = policy_type_to_pi_type[policy.policy_type]
             domain = policy.item
-            new_pi_domains.append(Domainlist(type=type, domain=domain))
+            new_pi_domains.append(Domainlist(type=p_type, domain=domain))
         
         # inserting new domains in db
         if len(new_pi_domains) > 0:
@@ -193,7 +193,8 @@ def retreive_policies_demanding_action(policies:Device.policies, max_date_modifi
         elif policy.date_modified > max_date_modified: # new or modified policies
             if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
                 policies_demanding_update.add(policy)
-            else:
+            elif policy.item not in pi_domain_map:
+                current_app.logger.info(f"Adding new domain to pi-hole: {policy.item}")
                 brand_new_policies.add(policy)
         else: # old unmodified policies
             if policy.item in pi_domain_map and policy_type_to_pi_type[policy.policy_type] != pi_domain_map[policy.item][1]:
