@@ -212,6 +212,15 @@ class RoomPolicy(db.Model):
     room_id = db.Column(db.Integer, db.ForeignKey('room.id'), nullable=False)
     threshold_warning_sent = db.Column(db.Boolean, default=False, nullable=False)
 
+    def is_active(self):
+        if self.active and is_in_timeframe(self.start_time, self.end_time, datetime.now().time(), include_start=True):
+            return True
+        return False
+    
+    def is_enabled(self):
+        return self.active
+    
+
     def insert_room_policy(self):
         db.session.add(self)
         db.session.commit()

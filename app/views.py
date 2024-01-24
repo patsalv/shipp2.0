@@ -310,7 +310,30 @@ def delete_room_policy(room_id,room_policy_id):
     room_policy = db.get_or_404(RoomPolicy, room_policy_id)
     room_policy.delete_room_policy()
     return redirect(url_for("main.room_by_id", room_id=room_id))
+
+@bp.route("/rooms/policies", methods=["GET"])
+@login_required
+def filter_room_policies():
+    args = request.args
+    room_id = args.to_dict()["roomId"]
+    policy_status = args.to_dict()["status"]
+
+    if room_id == "ALL":
+        filtered_room_policies = RoomPolicy.query.all()
+    else:
+        filtered_room_policies = RoomPolicy.query.filter(RoomPolicy.room_id == room_id).all()
     
+    if policy_status == PolicyStates.ACTIVE.value:
+        filtered_room_policies =[ policy for policy in filtered_room_policies if policy.is_active()]
+    elif policy_status == PolicyStates.ENABLED.value:
+        filtered_room_policies =[ policy for policy in filtered_room_policies if policy.is_enabled()]
+    elif policy_status == PolicyStates.DISABLED.value:
+        filtered_room_policies =[ policy for policy in filtered_room_policies if not policy.is_enabled()]
+    
+    policy_ids = [policy.id for policy in filtered_room_policies]
+    return jsonify(policy_ids)
+
+
 @bp.route("/device-types/policies/<int:policy_id>", methods=["DELETE"])
 @login_required
 def delete_device_type_policy(policy_id):
@@ -319,7 +342,7 @@ def delete_device_type_policy(policy_id):
     return redirect(url_for("main.policy_overview"))
     
 @bp.route("/device-types/policies", methods=["GET"])
-def filtered_device_type_policies():
+def filter_device_type_policies():
     args = request.args
     device_type = args.to_dict()["device_type"]
     policy_status = args.to_dict()["status"]
@@ -347,12 +370,13 @@ def filtered_device_type_policies():
 @login_required
 def policy_overview():
     all_room_policies = RoomPolicy.query.all()
+    all_rooms = Room.query.all()
     all_devices = Device.query.all()
     all_device_type_policies = DeviceTypePolicy.query.all()
     device_types = {device_type.value for device_type in DeviceTypeEnum}
     policy_states = {state.value for state in PolicyStates} 
 
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_states) 
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_states, all_rooms=all_rooms) 
 
 
 def disable_input_field(input_field):

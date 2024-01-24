@@ -17,8 +17,35 @@
     </div>
     {% if room_policies and room_policies|length > 0 %}
     <div class="relative overflow-x-auto shadow-md sm:rounded-lg flex flex-col justify-between">
-      <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+      <table id="room-policy-table" class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
         <h2 class="text-base text-accent-3 font-semibold md:ml-2"> Room Policies</h2>
+        <div class="flex flex-row gap-2 px-2 py-3">
+          <div class="select-rooms">
+            <label for="rooms" class="sr-only">Underline select</label>
+            <select
+              id="rooms"
+              class="block py-1 px-2 w-full text-sm text-text-1-almost-black bg-transparent border-2 border-b-2 border-gray-200 rounded-md appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+              >
+              <option value="ALL"> Room</option>
+              {% for room in all_rooms %}
+              <option value="{{ room.id }}">{{ room.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="select-policy-state">
+            <label for="policy-state" class="sr-only">Underline select</label>
+            <select
+              id="room-policy-status"
+              class="block py-1 px-2 w-full text-sm text-text-1-almost-black bg-transparent border-2 border-b-2 border-gray-200 rounded-md appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+              >
+              <option value="ALL"> Status </option>
+              {% for state in policy_states %}
+              <option value="{{ state }}">{{ state }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="button" id="room-filter-btn" class="text-white bg-accent-2-space-cadet hover:bg-accent-2-space-cadet-li focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-1.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Apply Filters</button>
+        </div>
         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
             <th scope="col" class="px-6 py-3">Policy Name</th>
@@ -71,10 +98,10 @@
             {% endfor %}
           </select>
         </div>
-        <div class="select-policy-state">
+        <div class="select-policy-status">
           <label for="policy_state" class="sr-only">Underline select</label>
           <select
-            id="policy-state"
+            id="device-type-policy-status"
             class="block py-1 px-2 w-full text-sm text-text-1-almost-black bg-transparent border-2 border-b-2 border-gray-200 rounded-md appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
             >
             <option value="ALL"> Status </option>
@@ -83,7 +110,7 @@
             {% endfor %}
           </select>
         </div>
-        <button type="button" id="filter-btn" class="text-white bg-accent-2-space-cadet hover:bg-accent-2-space-cadet-li focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-1.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Apply Filters</button>
+        <button type="button" id="device-type-filter-btn" class="text-white bg-accent-2-space-cadet hover:bg-accent-2-space-cadet-li focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-1.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Apply Filters</button>
       </div>
       
       <thead
