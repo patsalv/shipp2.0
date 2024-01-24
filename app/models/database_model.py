@@ -246,6 +246,7 @@ class DeviceTypePolicy(db.Model):
     name = db.Column(db.String(64), nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
+    #rename active to enabled
     active = db.Column(db.Boolean, default=True, nullable=False)
     offline_mode = db.Column(db.Boolean, default=True, nullable=False)
     request_threshold = db.Column(db.Integer, nullable=True, default=None)
@@ -257,6 +258,9 @@ class DeviceTypePolicy(db.Model):
         if self.active and is_in_timeframe(self.start_time, self.end_time, datetime.now().time(), include_start=True):
             return True
         return False
+    
+    def is_enabled(self):
+        return self.active
     
     def insert_policy(self):
         db.session.add(self)

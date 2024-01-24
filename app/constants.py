@@ -31,6 +31,11 @@ class DeviceTypeEnum(Enum):
     SPEAKER = "SPEAKER"
     OTHERS = "OTHERS"
 
+class PolicyStates(Enum):
+    ACTIVE = "ACTIVE"
+    ENABLED = "ENABLED"
+    DISABLED = "DISABLED"
+
 class DataSource(Enum):
 
     PI_HOLE = UUID("9ec62265-5475-4311-ba73-cc0d03eb6db0")

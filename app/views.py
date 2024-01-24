@@ -1,13 +1,13 @@
 # App routing
 import copy
 import traceback
-from flask import Blueprint, make_response, render_template, redirect, url_for, request, flash, current_app, abort
+from flask import Blueprint, jsonify, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
 from app.forms import DeviceForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
-from app.constants import HighLevelPolicyType, PolicyType, RoomStatus
+from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyStates, PolicyType, RoomStatus
 from app.models.database_model import DeviceTypePolicy
 from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies, evaluate_single_device_type_policy
 from app.service_integration_api import init_pihole_device, update_pihole_device
@@ -318,6 +318,29 @@ def delete_device_type_policy(policy_id):
     device_type_policy.delete_policy()
     return redirect(url_for("main.policy_overview"))
     
+@bp.route("/device-types/policies", methods=["GET"])
+def filtered_device_type_policies():
+    args = request.args
+    device_type = args.to_dict()["device_type"]
+    policy_status = args.to_dict()["status"]
+
+    if device_type == "ALL":
+        all_policies_for_type = DeviceTypePolicy.query.all()
+    else:
+        all_policies_for_type = DeviceTypePolicy.query.filter(DeviceTypePolicy.device_type == device_type).all()
+    
+    if policy_status == PolicyStates.ACTIVE.value:
+        filtered_device_type_policies =[ policy for policy in all_policies_for_type if policy.is_active()]
+    elif policy_status == PolicyStates.ENABLED.value:
+        filtered_device_type_policies =[ policy for policy in all_policies_for_type if policy.is_enabled()]
+    elif policy_status == PolicyStates.DISABLED.value:
+        filtered_device_type_policies =[ policy for policy in all_policies_for_type if not policy.is_enabled()]
+    else:
+        filtered_device_type_policies = all_policies_for_type
+    
+    policy_ids = [policy.id for policy in filtered_device_type_policies]
+
+    return jsonify(policy_ids)
 
 # deletion because of redirection accepted. There has to be a better way...
 @bp.route("/policies", methods=["GET", "DELETE"])
@@ -326,8 +349,10 @@ def policy_overview():
     all_room_policies = RoomPolicy.query.all()
     all_devices = Device.query.all()
     all_device_type_policies = DeviceTypePolicy.query.all()
-    
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies)
+    device_types = {device_type.value for device_type in DeviceTypeEnum}
+    policy_states = {state.value for state in PolicyStates} 
+
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_states) 
 
 
 def disable_input_field(input_field):

@@ -56,8 +56,36 @@
   
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg flex flex-col justify-between">
     <div class="h-4"></div>
-    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+    <table id="device-type-table" class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
       <h2 class="text-base text-accent-3 font-semibold md:ml-2">Device Type Policies</h2>
+      <div class="flex flex-row gap-2 px-2 py-3">
+        <div class="select-device-type">
+          <label for="device-types" class="sr-only">Underline select</label>
+          <select
+            id="device-types"
+            class="block py-1 px-2 w-full text-sm text-text-1-almost-black bg-transparent border-2 border-b-2 border-gray-200 rounded-md appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+            >
+            <option value="ALL"> Device Types</option>
+            {% for device_type in device_types %}
+            <option value="{{ device_type }}">{{ device_type }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="select-policy-state">
+          <label for="policy_state" class="sr-only">Underline select</label>
+          <select
+            id="policy-state"
+            class="block py-1 px-2 w-full text-sm text-text-1-almost-black bg-transparent border-2 border-b-2 border-gray-200 rounded-md appearance-none dark:text-gray-400 dark:border-gray-700 focus:outline-none focus:ring-0 focus:border-gray-200 peer"
+            >
+            <option value="ALL"> Status </option>
+            {% for state in policy_states %}
+            <option value="{{ state }}">{{ state }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="button" id="filter-btn" class="text-white bg-accent-2-space-cadet hover:bg-accent-2-space-cadet-li focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-1.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Apply Filters</button>
+      </div>
+      
       <thead
         class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400"
       >
