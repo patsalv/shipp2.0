@@ -1,0 +1,55 @@
+{% extends "base.html" %} {% block title %} Edit Room Policy {% endblock %} {%
+    block content %} 
+    
+    <div class="flex flex-col items-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+      <div class="form-device">
+        <form class="space-y-4" method="POST">
+          {{ form.hidden_tag() }}
+          <h5 class="text-xl font-medium text-gray-900 dark:text-white">
+            Edit room policy  {{ policy.name}} 
+          </h5>
+          {% if error %}
+          <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+           {{error}}
+          </div>
+          {% endif %}
+          <div class="mb-6">
+            {{ form.name.label(class_="form-label") }} {{
+            form.name(class_="form-input") }}
+          <div class="flex flex-row justify-between items-center py-8">
+          
+            <div class="flex flex-row items-center">
+              <div class="flex-item">{{ form.start_time.label(class_="form-label") }}</div> 
+              <div class="w-3"></div>
+              <div>{{form.start_time(class_="form-input") }}</div>
+            </div>
+            <div class="flex flex-row items-center">
+              <div class="flex-item">{{ form.end_time.label(class_="form-label") }}</div> 
+              <div class="w-3"></div>
+              <div>{{form.end_time(class_="form-input") }}</div>
+              <div class="w-3"></div>
+              <div>{{form.offline_mode.label(class_="form-label") }}</div>
+            <div class="w-3"></div>
+            <div>{{form.offline_mode(class_="form-input") }}</div>
+            </div>
+            
+          </div>
+          <div class="flex flex-row items-center">
+            
+          </div>
+          <div class="flex flex-row items-center">
+            <div>{{form.request_threshold.label(class_="form-label") }}</div>
+            <div class="w-3"></div>
+            <div class="w-16">{{form.request_threshold(class_="form-input") }}</div>
+            <div class="w-3"></div>
+            req/h
+          </div>
+          <div class="h-5"></div>
+            <button type="submit mt-2" class="form-btn" id="add-btn">
+              Save Changes
+            </button>
+        </form>
+      </div>
+    </div>
+    {% endblock %} {% block scripts %} {{ super() }} {% endblock %}
+    

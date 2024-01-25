@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
   const roomPolicyTrashBtns = document.querySelectorAll(".room-trash");
   const deviceTypeTrashButton = document.querySelectorAll(".device-type-trash");
+  const roomPolicyEditBtns = document.querySelectorAll(".room-policy-edit");
   const alertMsg = document.getElementById("alertMsg");
   deviceTypeTrashButton.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
@@ -21,6 +22,13 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  roomPolicyEditBtns.forEach(function (editBtn) {
+    editBtn.addEventListener("click", function () {
+      const roomId = editBtn.parentNode.parentNode.dataset.roomId;
+      const roomPolicyId = editBtn.parentNode.parentNode.dataset.policyId;
+      editRoomPolicy(roomPolicyId);
+    });
+  });
   // delete funciton for room policies
   async function deleteRoomPolicy(roomId, policyId) {
     try {
@@ -77,6 +85,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  async function editRoomPolicy(policyId) {
+    let url = undefined;
+    if (window.SCRIPT_ROOT) {
+      url = `${window.SCRIPT_ROOT}/rooms/policies/${policyId}`;
+    } else {
+      url = `/rooms/policies/${policyId}`;
+    }
+
+    console.log("edit room policy");
+    const res = await fetch(url, { method: "GET" });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    if (res.ok) {
+      window.location = res.url;
+    } else {
+      throw new Error(`Redirect failed! status: ${res.status}`);
+    }
+    console.log(res);
+    return res;
+  }
+
   document
     .getElementById("device-type-filter-btn")
     .addEventListener("click", filterDeviceTypePolicies);
@@ -84,6 +116,10 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("room-filter-btn")
     .addEventListener("click", filterRoomPolicies);
+
+  document
+    .getElementById("device-filter-btn")
+    .addEventListener("click", filterDevicePolicies);
 
   async function filterRoomPolicies() {
     let selectedRoomId = document.getElementById("rooms").value;
@@ -128,6 +164,34 @@ document.addEventListener("DOMContentLoaded", function () {
       url = `${window.SCRIPT_ROOT}/device-types/policies?device_type=${selectedDeviceType}&status=${selectedStatus}`;
     } else {
       url = `/device-types/policies?device_type=${selectedDeviceType}&status=${selectedStatus}`;
+    }
+    const res = await fetch(url);
+    let resJson = await res.json();
+
+    trElementsArray.slice(1).forEach(function (tr) {
+      const policyId = tr.getAttribute("data-policy-id");
+      if (resJson.includes(Number(policyId))) {
+        tr.classList.remove("hidden");
+      } else {
+        tr.classList.add("hidden");
+      }
+    });
+  }
+
+  async function filterDevicePolicies() {
+    let selectedDeviceId = document.getElementById("devices").value;
+    let selectedStatus = document.getElementById("device-policy-status").value;
+    let selectedPermission = document.getElementById("permission").value;
+
+    let devicePolicyTable = document.getElementById("device-table");
+    let trElements = devicePolicyTable.getElementsByTagName("tr");
+    let trElementsArray = Array.from(trElements);
+
+    let url = undefined;
+    if (window.SCRIPT_ROOT) {
+      url = `${window.SCRIPT_ROOT}/devices/policies?deviceId=${selectedDeviceId}&status=${selectedStatus}&permission=${selectedPermission}`;
+    } else {
+      url = `/devices/policies?deviceId=${selectedDeviceId}&status=${selectedStatus}&permission=${selectedPermission}`;
     }
     const res = await fetch(url);
     let resJson = await res.json();

@@ -31,10 +31,14 @@ class DeviceTypeEnum(Enum):
     SPEAKER = "SPEAKER"
     OTHERS = "OTHERS"
 
-class PolicyStates(Enum):
+class HighLevelPolicyStatus(Enum):
     ACTIVE = "ACTIVE"
     ENABLED = "ENABLED"
     DISABLED = "DISABLED"
+
+class DevicePolicyStatus(Enum):
+    ACTIVE="ACTIVE"
+    INACTIVE="INACTIVE"
 
 class DataSource(Enum):
 

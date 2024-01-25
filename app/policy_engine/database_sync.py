@@ -20,6 +20,8 @@ def sync_device_policies(device):
     such that they match the policies of the device instance.
     '''
     
+    # TODO: Find better solution. This leads to a bug, when offline room policies exist before domains
+    # have been set in pihole
     if in_offline_room(device):
         # don't sync policies from devices if room is offline
         return

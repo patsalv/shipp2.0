@@ -25,7 +25,14 @@ class RoomPolicyForm(FlaskForm):
     start_time=TimeField('From', validators=[InputRequired()])
     end_time=TimeField('Until', validators=[InputRequired()])
     offline_mode = BooleanField('Offline', default=True)
-    request_threshold = IntegerField('Request Threshold', default=None, )
+    request_threshold = IntegerField('Request Threshold', default=None)
+
+class EditRoomPolicyForm(FlaskForm):
+    name = StringField('Policy Name', validators=[InputRequired()])
+    start_time=TimeField('From', validators=[InputRequired()])
+    end_time=TimeField('Until', validators=[InputRequired()])
+    offline_mode = BooleanField('Offline', default=True)
+    request_threshold = IntegerField('Request Threshold', default=None)
 
 
 class PolicyForm(FlaskForm):

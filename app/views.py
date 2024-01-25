@@ -4,10 +4,10 @@ import traceback
 from flask import Blueprint, jsonify, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
-from app.forms import DeviceForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
+from app.forms import DeviceForm, EditRoomPolicyForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
-from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyStates, PolicyType, RoomStatus
+from app.constants import DevicePolicyStatus, DeviceTypeEnum, HighLevelPolicyType, HighLevelPolicyStatus, PolicyType, RoomStatus
 from app.models.database_model import DeviceTypePolicy
 from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies, evaluate_single_device_type_policy
 from app.service_integration_api import init_pihole_device, update_pihole_device
@@ -311,6 +311,52 @@ def delete_room_policy(room_id,room_policy_id):
     room_policy.delete_room_policy()
     return redirect(url_for("main.room_by_id", room_id=room_id))
 
+
+
+
+# TODO: add error message
+@bp.route("/rooms/policies/<int:policy_id>", methods=["GET", "POST"])
+@login_required
+def edit_room_policy(policy_id):
+    EDIT_POLICY_URL = "policies/edit-room-policy.html"
+    policy = db.get_or_404(RoomPolicy, policy_id)
+    form = EditRoomPolicyForm() 
+    if request.method == "GET":
+        form = EditRoomPolicyForm() 
+        form.name.data = policy.name
+        form.start_time.data = policy.start_time
+        form.end_time.data = policy.end_time
+        form.offline_mode.data = policy.offline_mode
+        form.request_threshold.data = policy.request_threshold
+        return render_template(EDIT_POLICY_URL, policy=policy, form=form)
+    
+    if request.method == "POST" and form.validate_on_submit():
+        print("Policy.ROOM_ID", policy.room_id)
+        policy.name = form.name.data
+        policy.start_time = form.start_time.data
+        policy.start_time = form.start_time.data
+        policy.end_time = form.end_time.data  
+        policy.offline_mode = form.offline_mode.data
+        policy.request_threshold = form.request_threshold.data
+        
+        is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(policy)
+        
+
+        if is_conflicting:
+            return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+        else:
+            try:
+                policy.update_policy()
+                return redirect(url_for("main.policy_overview"))
+            except Exception as e: 
+                current_app.logger.error(f"Error while updating room policy: {e}")
+                db.session.rollback()
+                return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=e)
+    else:
+        return render_template(EDIT_POLICY_URL, policy=policy, form=form)
+
+
+
 @bp.route("/rooms/policies", methods=["GET"])
 @login_required
 def filter_room_policies():
@@ -323,11 +369,11 @@ def filter_room_policies():
     else:
         filtered_room_policies = RoomPolicy.query.filter(RoomPolicy.room_id == room_id).all()
     
-    if policy_status == PolicyStates.ACTIVE.value:
+    if policy_status == HighLevelPolicyStatus.ACTIVE.value:
         filtered_room_policies =[ policy for policy in filtered_room_policies if policy.is_active()]
-    elif policy_status == PolicyStates.ENABLED.value:
+    elif policy_status == HighLevelPolicyStatus.ENABLED.value:
         filtered_room_policies =[ policy for policy in filtered_room_policies if policy.is_enabled()]
-    elif policy_status == PolicyStates.DISABLED.value:
+    elif policy_status == HighLevelPolicyStatus.DISABLED.value:
         filtered_room_policies =[ policy for policy in filtered_room_policies if not policy.is_enabled()]
     
     policy_ids = [policy.id for policy in filtered_room_policies]
@@ -352,11 +398,11 @@ def filter_device_type_policies():
     else:
         all_policies_for_type = DeviceTypePolicy.query.filter(DeviceTypePolicy.device_type == device_type).all()
     
-    if policy_status == PolicyStates.ACTIVE.value:
+    if policy_status == HighLevelPolicyStatus.ACTIVE.value:
         filtered_device_type_policies =[ policy for policy in all_policies_for_type if policy.is_active()]
-    elif policy_status == PolicyStates.ENABLED.value:
+    elif policy_status == HighLevelPolicyStatus.ENABLED.value:
         filtered_device_type_policies =[ policy for policy in all_policies_for_type if policy.is_enabled()]
-    elif policy_status == PolicyStates.DISABLED.value:
+    elif policy_status == HighLevelPolicyStatus.DISABLED.value:
         filtered_device_type_policies =[ policy for policy in all_policies_for_type if not policy.is_enabled()]
     else:
         filtered_device_type_policies = all_policies_for_type
@@ -364,6 +410,7 @@ def filter_device_type_policies():
     policy_ids = [policy.id for policy in filtered_device_type_policies]
 
     return jsonify(policy_ids)
+
 
 # deletion because of redirection accepted. There has to be a better way...
 @bp.route("/policies", methods=["GET", "DELETE"])
@@ -374,9 +421,42 @@ def policy_overview():
     all_devices = Device.query.all()
     all_device_type_policies = DeviceTypePolicy.query.all()
     device_types = {device_type.value for device_type in DeviceTypeEnum}
-    policy_states = {state.value for state in PolicyStates} 
+    policy_status = {status.value for status in HighLevelPolicyStatus} 
+    device_policy_status = {status.value for status in DevicePolicyStatus}
 
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_states, all_rooms=all_rooms) 
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_status, all_rooms=all_rooms, device_policy_status=device_policy_status) 
+
+
+
+
+@bp.route("/devices/policies", methods=["GET"])
+def filter_device_policies():
+    args = request.args
+    device_id = args.to_dict()["deviceId"]
+    policy_status = args.to_dict()["status"]
+    permission = args.to_dict()["permission"]
+    print("SELECTED PERMISSION: ", permission);
+    if device_id == "ALL":
+        all_policies_for_type = Policy.query.all()
+    else:
+        all_policies_for_type = Policy.query.filter(Policy.device_id == device_id).all()
+    
+    if policy_status == DevicePolicyStatus.ACTIVE.value:
+        filtered_device_policies =[ policy for policy in all_policies_for_type if policy.active]
+    elif policy_status == DevicePolicyStatus.INACTIVE.value:
+        filtered_device_policies =[ policy for policy in all_policies_for_type if not policy.active]
+    else:
+        filtered_device_policies = all_policies_for_type
+    
+    if permission == "ALLOWED":
+        filtered_device_policies =[ policy for policy in filtered_device_policies if policy.policy_type == PolicyType.ALLOW.value]
+    elif permission == "BLOCKED":
+        filtered_device_policies =[ policy for policy in filtered_device_policies if policy.policy_type == PolicyType.BLOCK.value]
+
+    policy_ids = [policy.id for policy in filtered_device_policies]
+
+    return jsonify(policy_ids)
+
 
 
 def disable_input_field(input_field):
@@ -394,7 +474,7 @@ def _map_policy_data(data):
             policy["policy_type"] = PolicyType.ALLOW.value
         elif dp["type"] == "block":
             policy["policy_type"] = PolicyType.BLOCK.value
-        policy["item"] = dp["domain"]
         policy["confirmed"] = dp["confirmed"]
+        policy["item"] = dp["domain"]
         policies.append(policy)
     return policies
