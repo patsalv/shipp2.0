@@ -29,7 +29,7 @@ block content %}
             {{ subfield(class_="form-radio-input") }} {{
             subfield.label(class_="form-radio-label") }}
           </div>
-          <div class="w-3"></div>
+
           {% endfor %}
         </div>
       </div>
@@ -47,7 +47,7 @@ block content %}
         </div>
       </div>
 
-      <div class="flex flex-row justify-between items-center py-8">
+      <div class="flex flex-row justify-between items-center py-3">
         <div class="flex flex-row items-center">
           <div class="flex-item">
             {{ form.start_time.label(class_="form-label") }}
@@ -67,13 +67,14 @@ block content %}
           <div>{{form.offline_mode(class_="form-input") }}</div>
         </div>
       </div>
-      <div class="flex flex-row items-center"></div>
-      <div class="flex flex-row items-center">
+      <div class="flex flex-row justify-between items-center">
         <div>{{form.request_threshold.label(class_="form-label") }}</div>
-        <div class="w-3"></div>
-        <div class="w-16">{{form.request_threshold(class_="form-input") }}</div>
-        <div class="w-3"></div>
-        req/h
+        <div class="flex flex-row items-center gap-2">
+          <div class="w-16">
+            {{form.request_threshold(class_="form-input") }}
+          </div>
+          <div>req/h</div>
+        </div>
       </div>
       <div class="h-5"></div>
       <button type="submit mt-2" class="form-btn" id="add-btn">

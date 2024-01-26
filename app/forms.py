@@ -14,7 +14,6 @@ class DeviceForm(FlaskForm):
     default_policy = RadioField('Default Policy', choices=[(DefaultPolicyValues.ALLOW_ALL.value, 'Allow all'), (DefaultPolicyValues.BLOCK_ALL.value, 'Block all')],
                                 default=DefaultPolicyValues.ALLOW_ALL.value, validators=[DataRequired()])
     
-
 # TODO: add devices to this Form.
 class RoomForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
@@ -34,8 +33,15 @@ class EditRoomPolicyForm(FlaskForm):
     offline_mode = BooleanField('Offline', default=True)
     request_threshold = IntegerField('Request Threshold', default=None)
 
+class EditDeviceTypePolicyForm(FlaskForm):
+    name = StringField('Policy Name', validators=[InputRequired()])
+    start_time=TimeField('From', validators=[InputRequired()])
+    end_time=TimeField('Until', validators=[InputRequired()])
+    offline_mode = BooleanField('Offline', default=True)
+    request_threshold = IntegerField('Request Threshold', default=None)
+    
 
-class PolicyForm(FlaskForm):
+class HighlevelPolicyForm(FlaskForm):
     name = StringField('Policy Name', validators=[InputRequired()])
     policy_type = RadioField("Policy Type", choices=[(HighLevelPolicyType.ROOM_POLICY.value, 'Room Policy'), (HighLevelPolicyType.DEVICE_TYPE_POLICY.value, 'Device Type Policy')],)
     rooms = SelectField('Rooms')

@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const roomPolicyTrashBtns = document.querySelectorAll(".room-trash");
   const deviceTypeTrashButton = document.querySelectorAll(".device-type-trash");
   const roomPolicyEditBtns = document.querySelectorAll(".room-policy-edit");
+  const deviceTypePolicyEditBtns = document.querySelectorAll(
+    ".device-type-policy-edit"
+  );
   const alertMsg = document.getElementById("alertMsg");
   deviceTypeTrashButton.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
@@ -24,15 +27,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   roomPolicyEditBtns.forEach(function (editBtn) {
     editBtn.addEventListener("click", function () {
-      const roomId = editBtn.parentNode.parentNode.dataset.roomId;
       const roomPolicyId = editBtn.parentNode.parentNode.dataset.policyId;
       editRoomPolicy(roomPolicyId);
     });
   });
+
+  deviceTypePolicyEditBtns.forEach(function (editBtn) {
+    editBtn.addEventListener("click", function () {
+      const policyId = editBtn.parentNode.parentNode.dataset.policyId;
+      editDeviceTypePolicy(policyId);
+    });
+  });
+
   // delete funciton for room policies
   async function deleteRoomPolicy(roomId, policyId) {
     try {
-      let url = undefined;
+      let url;
       if (window.SCRIPT_ROOT) {
         url = `${window.SCRIPT_ROOT}/room/${roomId}/policies/${policyId}`;
       } else {
@@ -60,7 +70,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // delete functions for category policies
   async function deleteCategoryPolicies(policyId) {
     try {
-      let url = undefined;
+      let url;
       if (window.SCRIPT_ROOT) {
         url = `${window.SCRIPT_ROOT}/device-types/policies/${policyId}`;
       } else {
@@ -86,14 +96,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function editRoomPolicy(policyId) {
-    let url = undefined;
+    let url;
     if (window.SCRIPT_ROOT) {
       url = `${window.SCRIPT_ROOT}/rooms/policies/${policyId}`;
     } else {
       url = `/rooms/policies/${policyId}`;
     }
 
-    console.log("edit room policy");
     const res = await fetch(url, { method: "GET" });
 
     if (!res.ok) {
@@ -106,6 +115,29 @@ document.addEventListener("DOMContentLoaded", function () {
       throw new Error(`Redirect failed! status: ${res.status}`);
     }
     console.log(res);
+    return res;
+  }
+
+  async function editDeviceTypePolicy(policyId) {
+    console.log("hello");
+    let url;
+    if (window.SCRIPT_ROOT) {
+      url = `${window.SCRIPT_ROOT}/device-types/policies/${policyId}`;
+    } else {
+      url = `/device-types/policies/${policyId}`;
+    }
+
+    const res = await fetch(url, { method: "GET" });
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+
+    if (res.ok) {
+      window.location = res.url;
+    } else {
+      throw new Error(`Redirect failed! status: ${res.status}`);
+    }
     return res;
   }
 

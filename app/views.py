@@ -4,7 +4,7 @@ import traceback
 from flask import Blueprint, jsonify, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
-from app.forms import DeviceForm, EditRoomPolicyForm, LoginForm, PolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
+from app.forms import DeviceForm, EditDeviceTypePolicyForm, EditRoomPolicyForm, LoginForm, HighlevelPolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import DevicePolicyStatus, DeviceTypeEnum, HighLevelPolicyType, HighLevelPolicyStatus, PolicyType, RoomStatus
@@ -236,7 +236,7 @@ def delete_room(room_id):
 @bp.route("/highlevelpolicies", methods=["GET", "POST"])
 @login_required
 def highlevel_policies():
-    form=PolicyForm()
+    form=HighlevelPolicyForm()
     all_rooms = Room.query.all()
     form.rooms.choices= [(room.id,room.name) for room in all_rooms] 
     form.request_threshold.data = 100
@@ -331,7 +331,6 @@ def edit_room_policy(policy_id):
         return render_template(EDIT_POLICY_URL, policy=policy, form=form)
     
     if request.method == "POST" and form.validate_on_submit():
-        print("Policy.ROOM_ID", policy.room_id)
         policy.name = form.name.data
         policy.start_time = form.start_time.data
         policy.start_time = form.start_time.data
@@ -387,6 +386,45 @@ def delete_device_type_policy(policy_id):
     device_type_policy.delete_policy()
     return redirect(url_for("main.policy_overview"))
     
+
+@bp.route("/device-types/policies/<int:policy_id>", methods=["GET", "POST"])
+def edit_device_type_policies(policy_id):
+    EDIT_POLICY_URL = "policies/edit-device-type-policy.html"
+    policy = db.get_or_404(DeviceTypePolicy, policy_id)
+    form = EditDeviceTypePolicyForm()
+    if request.method == "GET":
+        form.name.data = policy.name
+        form.start_time.data = policy.start_time
+        form.end_time.data = policy.end_time
+        form.offline_mode.data = policy.offline_mode
+        form.request_threshold.data = policy.request_threshold
+        return render_template(EDIT_POLICY_URL, policy=policy, form=form)
+    
+    if request.method == "POST" and form.validate_on_submit():
+        policy.name = form.name.data
+        policy.start_time = form.start_time.data
+        policy.start_time = form.start_time.data
+        policy.end_time = form.end_time.data  
+        policy.offline_mode = form.offline_mode.data
+        policy.request_threshold = form.request_threshold.data
+        
+        is_conflicting, policy_in_conflict = check_for_device_type_policy_conflicts(policy)
+
+        if is_conflicting:
+            return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=f"Device type policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+        else:
+            try:
+                policy.update_policy()
+                return redirect(url_for("main.policy_overview"))
+            except Exception as e: 
+                current_app.logger.error(f"Error while updating device type policy: {e}")
+                db.session.rollback()
+                return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=e)
+    else:
+        return render_template(EDIT_POLICY_URL, policy=policy, form=form)
+
+    
+
 @bp.route("/device-types/policies", methods=["GET"])
 def filter_device_type_policies():
     args = request.args
@@ -412,19 +450,50 @@ def filter_device_type_policies():
     return jsonify(policy_ids)
 
 
+# definitively not beautiful but it works
+def create_frontend_highlevel_policy_object(policy: RoomPolicy, type: HighLevelPolicyType):
+    '''Takes an instance of RoomPolicy and returns a dictionary with the same attributes except for stat'''
+    frontend_policy = dict()
+    frontend_policy["id"] = policy.id
+    frontend_policy["name"] = policy.name
+    frontend_policy["start_time"] = policy.start_time
+    frontend_policy["end_time"] = policy.end_time
+    frontend_policy["offline_mode"] = policy.offline_mode
+    frontend_policy["request_threshold"] = policy.request_threshold
+    
+    frontend_policy["threshold_warning_sent"] = policy.threshold_warning_sent
+    
+    if(type == HighLevelPolicyType.DEVICE_TYPE_POLICY):
+        frontend_policy["device_type"] = policy.device_type
+
+    elif(type == HighLevelPolicyType.ROOM_POLICY): 
+        frontend_policy["room_id"] = policy.room_id
+        frontend_policy["room_name"] = policy.room.name
+
+    if policy.is_active():
+        frontend_policy["status"] = "active"
+    elif(policy.is_enabled()):
+        frontend_policy["status"] = "enabled"
+    else:
+        frontend_policy["status"] = "disabled"
+
+    return frontend_policy
+
 # deletion because of redirection accepted. There has to be a better way...
 @bp.route("/policies", methods=["GET", "DELETE"])
 @login_required
 def policy_overview():
     all_room_policies = RoomPolicy.query.all()
+    all_room_policies_mapped= [create_frontend_highlevel_policy_object(policy, HighLevelPolicyType.ROOM_POLICY) for policy in all_room_policies]
     all_rooms = Room.query.all()
     all_devices = Device.query.all()
     all_device_type_policies = DeviceTypePolicy.query.all()
+    all_device_type_policies_mapped = [create_frontend_highlevel_policy_object(policy, HighLevelPolicyType.DEVICE_TYPE_POLICY) for policy in all_device_type_policies]
     device_types = {device_type.value for device_type in DeviceTypeEnum}
-    policy_status = {status.value for status in HighLevelPolicyStatus} 
+    policy_status = {status.value for status in HighLevelPolicyStatus}
     device_policy_status = {status.value for status in DevicePolicyStatus}
-
-    return render_template("policies/policy-overview.html", room_policies=all_room_policies, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies, device_types=device_types, policy_states=policy_status, all_rooms=all_rooms, device_policy_status=device_policy_status) 
+    
+    return render_template("policies/policy-overview.html", room_policies=all_room_policies_mapped, all_devices=all_devices, policy_type=PolicyType, all_device_type_policies = all_device_type_policies_mapped, device_types=device_types, policy_states=policy_status, all_rooms=all_rooms, device_policy_status=device_policy_status) 
 
 
 
