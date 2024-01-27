@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", function () {
     ".device-type-policy-edit"
   );
   const roomPolicyToggleBtns = document.querySelectorAll(".room-policy-toggle");
+  const deviceTypePolicyToggleBtns = document.querySelectorAll(
+    ".device-type-policy-toggle"
+  );
+
   const alertMsg = document.getElementById("alertMsg");
   deviceTypeTrashButton.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
@@ -41,13 +45,20 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   roomPolicyToggleBtns.forEach(function (toggleBtn) {
-    toggleBtn.addEventListener("load", loadRoomPolicyState(toggleBtn));
+    toggleBtn.addEventListener("load", loadHighLevelPolicyState(toggleBtn));
     toggleBtn.addEventListener("click", function () {
-      switchRoomPolicyState(toggleBtn);
+      switchHighLevelPolicyState(toggleBtn, "room");
     });
   });
 
-  async function loadRoomPolicyState(toggleBtn) {
+  deviceTypePolicyToggleBtns.forEach(function (toggleBtn) {
+    toggleBtn.addEventListener("load", loadHighLevelPolicyState(toggleBtn));
+    toggleBtn.addEventListener("click", function () {
+      switchHighLevelPolicyState(toggleBtn, "device-type");
+    });
+  });
+
+  async function loadHighLevelPolicyState(toggleBtn) {
     let status =
       toggleBtn.parentNode.parentNode.parentNode.dataset.policyStatus;
 
@@ -58,16 +69,23 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  async function switchRoomPolicyState(toggleBtn) {
-    let policyId = toggleBtn.parentNode.parentNode.parentNode.dataset.policyId;
-    try {
-      let url;
-      if (window.SCRIPT_ROOT) {
-        url = `${window.SCRIPT_ROOT}/rooms/policies/${policyId}`;
-      } else {
-        url = `/rooms/policies/${policyId}`;
-      }
+  async function switchHighLevelPolicyState(toggleBtn, policyType) {
+    if (policyType !== "room" && policyType !== "device-type") {
+      throw new Error("Invalid policy type passed to switchRoomPolicyState");
+    }
 
+    let policyId = toggleBtn.parentNode.parentNode.parentNode.dataset.policyId;
+
+    let endpoint =
+      policyType === "room"
+        ? `/rooms/policies/${policyId}`
+        : `/device-types/policies/${policyId}`;
+
+    let url = window.SCRIPT_ROOT
+      ? `${window.SCRIPT_ROOT}${endpoint}`
+      : endpoint;
+
+    try {
       let response = await fetch(url, { method: "PUT" });
 
       if (!response.ok) {

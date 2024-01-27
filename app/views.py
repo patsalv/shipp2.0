@@ -443,6 +443,20 @@ def edit_device_type_policies(policy_id):
     else:
         return render_template(EDIT_POLICY_URL, policy=policy, form=form)
 
+@bp.route("/device-types/policies/<int:policy_id>", methods=["PUT"])
+@login_required
+def switch_device_type_policy_status(policy_id):
+    try:
+        policy= db.get_or_404(DeviceTypePolicy, policy_id)
+        policy.active = not policy.active
+        policy.update_policy()
+    except Exception as e:
+        current_app.logger.error(f"Error while switching room policy status: {e}")
+        db.session.rollback()
+        abort(500, "Error while switching room policy status.") 
+    
+    return jsonify({"enabled": policy.active}) 
+
     
 
 @bp.route("/device-types/policies", methods=["GET"])
