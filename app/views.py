@@ -1,11 +1,13 @@
 # App routing
 import copy
+import datetime
 import traceback
 from flask import Blueprint, jsonify, make_response, render_template, redirect, url_for, request, flash, current_app, abort
 from app.extensions import db
+from app.helpers.helpers import is_in_timeframe
 from app.models import Device, DeviceConfig, User, Policy, Room, RoomPolicy
 from app.forms import DeviceForm, EditDeviceTypePolicyForm, EditRoomPolicyForm, LoginForm, HighlevelPolicyForm, RegistrationForm, RoomForm, RoomPolicyForm
-from datetime import datetime
+
 from flask_login import login_required, login_user, logout_user
 from app.constants import DevicePolicyStatus, DeviceTypeEnum, HighLevelPolicyType, HighLevelPolicyStatus, PolicyType, RoomStatus
 from app.models.database_model import DeviceType, DeviceTypePolicy
@@ -70,7 +72,7 @@ def edit_device(device_id):
         if default_policy.item != form.default_policy.data:
             default_policy.item = form.default_policy.data
         if current_config.ip_address != form.ip.data:
-            current_config.valid_to = datetime.now()
+            current_config.valid_to = datetime.datetime.now()
             current_config.update_device_config()
             device.device_configs.append(DeviceConfig(ip_address=form.ip.data))
         device.update_device()
@@ -359,7 +361,6 @@ def edit_room_policy(policy_id):
 @bp.route("/rooms/policies/<int:policy_id>", methods=["PUT"])
 @login_required
 def switch_room_policy_status(policy_id):
-    print("SWITCHING FOR POLCIY: ", policy_id)
     try:
         policy= db.get_or_404(RoomPolicy, policy_id)
         policy.active = not policy.active
@@ -369,7 +370,13 @@ def switch_room_policy_status(policy_id):
         db.session.rollback()
         abort(500, "Error while switching room policy status.") 
     
-    return jsonify({"enabled": policy.active}) 
+    in_time_frame = is_in_timeframe(policy.start_time, policy.end_time, datetime.datetime.now().time(),include_start=True)
+
+    if policy.active and in_time_frame:
+        return jsonify({"status": "active"})
+    elif policy.active and not in_time_frame:
+        return jsonify({"status": "enabled"})
+    return jsonify({"status": "disabled"}) 
 
 @bp.route("/rooms/policies", methods=["GET"])
 @login_required
@@ -455,7 +462,13 @@ def switch_device_type_policy_status(policy_id):
         db.session.rollback()
         abort(500, "Error while switching room policy status.") 
     
-    return jsonify({"enabled": policy.active}) 
+    in_time_frame = is_in_timeframe(policy.start_time, policy.end_time, datetime.datetime.now().time(),include_start=True)
+
+    if policy.active and in_time_frame:
+        return jsonify({"status": "active"})
+    elif policy.active and not in_time_frame:
+        return jsonify({"status": "enabled"})
+    return jsonify({"status": "disabled"}) 
 
     
 

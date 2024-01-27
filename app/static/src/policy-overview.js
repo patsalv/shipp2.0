@@ -93,12 +93,24 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       let resJson = await response.json();
 
-      if (resJson.enabled) {
+      if (resJson.status === "enabled") {
         toggleBtn.parentNode.parentNode.parentNode.childNodes[5].textContent =
           "Enabled";
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].classList.remove(
+          "text-red-500"
+        );
+      } else if (resJson.status === "active") {
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].textContent =
+          "Active";
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].classList.remove(
+          "text-red-500"
+        );
       } else {
         toggleBtn.parentNode.parentNode.parentNode.childNodes[5].textContent =
           "Disabled";
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].classList.add(
+          "text-red-500"
+        );
       }
     } catch (e) {
       console.error(e);
