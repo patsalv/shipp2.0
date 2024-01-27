@@ -8,8 +8,8 @@ from app.forms import DeviceForm, EditDeviceTypePolicyForm, EditRoomPolicyForm, 
 from datetime import datetime
 from flask_login import login_required, login_user, logout_user
 from app.constants import DevicePolicyStatus, DeviceTypeEnum, HighLevelPolicyType, HighLevelPolicyStatus, PolicyType, RoomStatus
-from app.models.database_model import DeviceTypePolicy
-from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_room_policies, evaluate_single_device_type_policy
+from app.models.database_model import DeviceType, DeviceTypePolicy
+from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_device_types, evaluate_policies_per_device_type, evaluate_room_policies, evaluate_single_device_type_policy
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -268,9 +268,9 @@ def highlevel_policies():
                 if is_conflicting:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 device_type_policy.insert_policy()
-                # add something like evaluate room policy but for device type policies
-                evaluate_single_device_type_policy(device_type_policy)
-                # return to policy overview
+
+                affected_device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type)).scalars().first()
+                evaluate_policies_per_device_type(affected_device_type)
                 return redirect(url_for("main.policy_overview"))
         except Exception as e:
             current_app.logger.error(f"Error while updating highlevel policies: {e}. Stack:  " , traceback.format_exc())
@@ -346,11 +346,14 @@ def edit_room_policy(policy_id):
         else:
             try:
                 policy.update_policy()
-                return redirect(url_for("main.policy_overview"))
+                
             except Exception as e: 
                 current_app.logger.error(f"Error while updating room policy: {e}")
                 db.session.rollback()
                 return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=e)
+            
+            evaluate_room_policies(policy.room)
+            return redirect(url_for("main.policy_overview"))
     else:
         return render_template(EDIT_POLICY_URL, policy=policy, form=form)
 
@@ -415,11 +418,16 @@ def edit_device_type_policies(policy_id):
         else:
             try:
                 policy.update_policy()
-                return redirect(url_for("main.policy_overview"))
+                
             except Exception as e: 
                 current_app.logger.error(f"Error while updating device type policy: {e}")
                 db.session.rollback()
                 return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=e)
+            
+
+            affected_device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == policy.device_type)).scalars().first()
+            evaluate_policies_per_device_type(affected_device_type)
+            return redirect(url_for("main.policy_overview"))
     else:
         return render_template(EDIT_POLICY_URL, policy=policy, form=form)
 

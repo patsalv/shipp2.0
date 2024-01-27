@@ -168,14 +168,13 @@ class Room(db.Model):
         db.session.commit() 
 
     def has_active_policy (self, offline_only:bool) -> bool:
-        room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == self.id)).scalars().all()
         current_time = datetime.now().time()
-        for room_policy in room_policies:
+        for room_policy in self.policies:
             if not(room_policy.active):
                 continue
             if offline_only and not(room_policy.offline_mode):
                 continue
-            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True) and room_policy.active:
+            if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True):
                 return True
 
         return False    
@@ -251,6 +250,41 @@ class DeviceType(db.Model):
     def update(self):
         db.session.add(self)
         db.session.commit()
+
+    def has_active_policy (self, offline_only:bool) -> bool:
+        current_time = datetime.now().time()
+        for device_type_policy in self.policies:
+            if not(device_type_policy.active):
+                continue
+            if offline_only and not(device_type_policy.offline_mode):
+                continue
+            if is_in_timeframe(device_type_policy.start_time, device_type_policy.end_time, current_time, include_start=True):
+                return True
+
+        return False    
+
+    def get_enforced_device_type_policy(self):
+        ''' Returns, if existing, the currently enforced room policy for the provided room. Returns None if no active policy is found'''
+        current_time = datetime.now().time()
+
+        for device_type_policy in self.policies:
+            if not device_type_policy.active:
+                return None
+            
+            if is_in_timeframe(device_type_policy.start_time, device_type_policy.end_time, current_time, include_start=True):
+                return device_type_policy
+            
+        return None
+    
+    def needs_status_update(self):
+        has_active_offline_policy = self.has_active_policy(offline_only=True)
+        if self.offline and not has_active_offline_policy:
+            return True
+        if not self.offline and has_active_offline_policy:
+            return True
+    
+        return False
+
 
 class DeviceTypePolicy(db.Model):
     id = db.Column(db.Integer, primary_key=True)

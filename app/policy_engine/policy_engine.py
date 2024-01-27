@@ -6,7 +6,7 @@ from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyType, Defau
 from flask import current_app
 from app.models.database_model import DeviceType
 
-from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_offline_policy, enforce_offline_room, relinquish_device_type_offline_policy, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_offline_policy, enforce_offline_device_type, enforce_offline_room, relinquish_device_type_offline_policy, relinquish_offline_device_type, relinquish_offline_room, sync_policies_to_pihole
 from datetime import datetime
 from typing import Union, Tuple
 
@@ -103,7 +103,7 @@ def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePo
         devices = db.session.execute(db.select(Device).where(Device.room_id == policy.room_id)).scalars().all()
 
     elif policy_type.value == "DEVICE_TYPE_POLICY":
-        devices = db.session.execute(db.select(Device).where(Device.device_type.value == policy.device_type.value)).scalars().all()
+        devices = db.session.execute(db.select(Device).where(Device.device_type == policy.device_type.value)).scalars().all()
 
     # get all devices affected by the policy & go through each device and check the number of requests
     for device in devices:
@@ -137,7 +137,7 @@ def evaluate_room_policies(room:Room) -> None:
                 room.status = RoomStatus.OFFLINE.value
             else: 
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
-                relinquish_offline_room(room)
+                relinquish_offline_room(room.id)
             room.update_room()
         except Exception as e:
             db.rollback()
@@ -156,7 +156,7 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
     Returns "enforced" if a policy has been enforced and None otherwise '''
     try:
         device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
-        
+
     except Exception as e:
         print("An error occured when querying the db to retreive a device type: ", e)
         return
@@ -174,15 +174,37 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
                 relinquish_device_type_offline_policy(device_type_policy)
                 if device_type_policy.threshold_warning_sent:
                     device_type_policy.reset_threshold_warning_sent()
-        
 
-def evaluate_device_type_policies():
-    # for each device type, check if there is an active policy
-    for device_type in DeviceTypeEnum:
-       policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == device_type.value)).scalars().all()
-        
-       for policy in policies:
-            evaluate_single_device_type_policy(policy)
+def evaluate_policies_per_device_type(device_type: DeviceType):
+    '''Evaluates all policies for a given device type and activates/deactivates them accordingly'''
+    has_active_policy = device_type.has_active_policy(offline_only=False)
+    active_policy = None
+    if has_active_policy:
+        active_policy = device_type.get_enforced_device_type_policy()
+        check_for_request_threshold_violation(active_policy, HighLevelPolicyType.DEVICE_TYPE_POLICY)
+    
+    need_device_type_update= device_type.needs_status_update()
+
+    if need_device_type_update:
+        try:
+            if has_active_policy:
+                active_policy.reset_threshold_warning_sent()
+                enforce_offline_device_type(device_type)
+                device_type.offline = True
+            else: 
+                device_type.offline = False# setting it to online so sync_device_policies works propperly
+                relinquish_offline_device_type(device_type)
+            device_type.update()
+        except Exception as e:
+            db.rollback()
+            current_app.logger.error(f"Error while updating room status: {e}")    
+
+
+def evaluate_device_types():
+    current_app.logger.info("Evaluating device type policies")
+    all_device_types = DeviceType.query.all()
+    for device_type in all_device_types:
+        evaluate_policies_per_device_type(device_type) 
 
 
 # TODO: if a room policy is active, the policies should not be synced to pihole

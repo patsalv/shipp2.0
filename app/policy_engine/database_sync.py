@@ -22,7 +22,7 @@ def sync_device_policies(device):
     
     # TODO: Find better solution. This leads to a bug, when offline room policies exist before domains
     # have been set in pihole
-    if in_offline_room(device):
+    if offline_through_room_or_type(device):
         # don't sync policies from devices if room is offline
         return
     try:
@@ -113,15 +113,22 @@ def enforce_offline_room(room: Room):
 def relinquish_offline_room(room_id:int):
     '''Restores the policies of the devices in the room'''
     devices = db.session.execute(db.select(Device).where(Device.room_id == room_id)).scalars().all()
-    for device in devices:
-        sync_device_policies(device)
-        activate_device_policies(device)
+    try:
+        for device in devices:
+            sync_device_policies(device)
+            activate_device_policies(device)
+    except Exception as e:
+        current_app.logger.error(f"Error while relinquishing offline room: {e}")
+        db.session.rollback()
 
-def in_offline_room(device):
+def offline_through_room_or_type(device:Device):
     # room status is None if device is not in a room
-    if device.room == None or device.room.status == None:
+    device_type =db.session.execute(db.select(DeviceType).where(DeviceType.type == device.device_type)).scalars().one()
+
+    if device.room == None or device.room.status == None and not device_type.offline:
         return False
     
+    print("DEVICE:ROOM:STATUS",device.room.status)
     return device.room.status == RoomStatus.OFFLINE.value
 
 
@@ -138,7 +145,32 @@ def enforce_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     
     device_type.offline = True
     device_type.update()
-                    
+
+def enforce_offline_device_type(device_type: DeviceType):
+    '''Blocks all domains for all devices in the device type'''
+    current_app.logger.info("Enforcing device type policy...")
+    
+    try:
+        for device in device_type.devices:
+            deactivate_device_policies(device)
+            block_all_domains(device)
+        
+        device_type.offline = True
+        device_type.update()
+    except Exception as e:
+        current_app.logger.error(f"Error while enforcing offline device type: {e}")
+        db.session.rollback()   
+
+def relinquish_offline_device_type(device_type:DeviceType):
+    try:
+        for device in device_type.devices:
+            sync_device_policies(device)
+            activate_device_policies(device)
+    except Exception as e:
+        current_app.logger.error(f"Error while relinquishing offline device type: {e}")
+        db.session.rollback()        
+
+
 def relinquish_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     '''Restores the policies of the devices affected by the device type policy'''
     current_app.logger.info("Relinquishing device type policy...")
