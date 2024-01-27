@@ -6,7 +6,7 @@ from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyType, Defau
 from flask import current_app
 from app.models.database_model import DeviceType
 
-from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_policy, enforce_offline_room, relinquish_device_type_policy, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_offline_policy, enforce_offline_room, relinquish_device_type_offline_policy, relinquish_offline_room, sync_policies_to_pihole
 from datetime import datetime
 from typing import Union, Tuple
 
@@ -85,16 +85,6 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
     return False, None
     
 
-def activate_room_policies(room:Room):
-    '''Block all domains for all the devices in the provided room'''
-    enforce_offline_room(room)
-    
-
-def deactivate_room_policies(room:Room):
-    "Re-enforce device specific polices for all the devices in the provided room"
-    relinquish_offline_room(room.id)
-    
-    
 
 def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePolicy] ,policy_type:HighLevelPolicyType):
     from app.reporting.email_notification_service import send_threshold_notification_mail
@@ -131,23 +121,23 @@ def evaluate_room_policies(room:Room) -> None:
     Fetches all room policies from the DB, compares their active timeframe with 
     the actual room status and activates/deactivates them accordingly.
     '''   
-    has_active_policy = room.has_active_offline_policy()
+    has_active_policy = room.has_active_policy(offline_only=False)
     active_policy = None
     if has_active_policy:
         active_policy = room.get_enforced_room_policy()
         check_for_request_threshold_violation(active_policy, HighLevelPolicyType.ROOM_POLICY)
- 
-    need_update= room.needs_status_update()
     
-    if need_update:
+    need_room_update= room.needs_status_update()
+    
+    if need_room_update:
         try:
             if has_active_policy:
                 active_policy.reset_threshold_warning_sent()
-                activate_room_policies(room)
+                enforce_offline_room(room)
                 room.status = RoomStatus.OFFLINE.value
             else: 
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
-                deactivate_room_policies(room)
+                relinquish_offline_room(room)
             room.update_room()
         except Exception as e:
             db.rollback()
@@ -168,20 +158,20 @@ def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
         device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
         
     except Exception as e:
-        print("An error occured when querying the db: ", e)
+        print("An error occured when querying the db to retreive a device type: ", e)
         return
     # check ¡f policy is currently active
     if device_type_policy.is_active():
         # check if it is an offline policy and if the device is not already offline
         if device_type_policy.offline_mode and not device_type_obj.offline:
             #see if the device type is already offline
-            enforce_device_type_policy(device_type_policy)
+            enforce_device_type_offline_policy(device_type_policy)
     else:
         current_app.logger.info("Policy", device_type_policy.name , "is not active")
         if device_type_policy.offline_mode:
             #see if the device type is still offline
             if device_type_obj.offline:
-                relinquish_device_type_policy(device_type_policy)
+                relinquish_device_type_offline_policy(device_type_policy)
                 if device_type_policy.threshold_warning_sent:
                     device_type_policy.reset_threshold_warning_sent()
         

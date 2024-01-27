@@ -125,7 +125,7 @@ def in_offline_room(device):
     return device.room.status == RoomStatus.OFFLINE.value
 
 
-def enforce_device_type_policy(device_type_policy: DeviceTypePolicy):
+def enforce_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     '''Blocks all domains for all devices in the device type'''
     current_app.logger.info("Enforcing device type policy...")
     devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
@@ -139,7 +139,7 @@ def enforce_device_type_policy(device_type_policy: DeviceTypePolicy):
     device_type.offline = True
     device_type.update()
                     
-def relinquish_device_type_policy(device_type_policy: DeviceTypePolicy):
+def relinquish_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     '''Restores the policies of the devices affected by the device type policy'''
     current_app.logger.info("Relinquishing device type policy...")
     devices = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()

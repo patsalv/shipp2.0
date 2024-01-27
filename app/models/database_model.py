@@ -167,11 +167,13 @@ class Room(db.Model):
         db.session.delete(self)
         db.session.commit() 
 
-    def has_active_offline_policy (self) -> bool:
+    def has_active_policy (self, offline_only:bool) -> bool:
         room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == self.id)).scalars().all()
         current_time = datetime.now().time()
         for room_policy in room_policies:
-            if not(room_policy.offline_mode):
+            if not(room_policy.active):
+                continue
+            if offline_only and not(room_policy.offline_mode):
                 continue
             if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True) and room_policy.active:
                 return True
@@ -179,7 +181,7 @@ class Room(db.Model):
         return False    
 
     def needs_status_update(self):
-        has_active_offline_policy = self.has_active_offline_policy()
+        has_active_offline_policy = self.has_active_policy(offline_only=True)
         if self.status == RoomStatus.OFFLINE.value and not has_active_offline_policy:
             return True
         if self.status == RoomStatus.ONLINE.value and has_active_offline_policy:
