@@ -312,8 +312,6 @@ def delete_room_policy(room_id,room_policy_id):
     return redirect(url_for("main.room_by_id", room_id=room_id))
 
 
-
-
 # TODO: add error message
 @bp.route("/rooms/policies/<int:policy_id>", methods=["GET", "POST"])
 @login_required
@@ -358,6 +356,20 @@ def edit_room_policy(policy_id):
         return render_template(EDIT_POLICY_URL, policy=policy, form=form)
 
 
+@bp.route("/rooms/policies/<int:policy_id>", methods=["PUT"])
+@login_required
+def switch_room_policy_status(policy_id):
+    print("SWITCHING FOR POLCIY: ", policy_id)
+    try:
+        policy= db.get_or_404(RoomPolicy, policy_id)
+        policy.active = not policy.active
+        policy.update_policy()
+    except Exception as e:
+        current_app.logger.error(f"Error while switching room policy status: {e}")
+        db.session.rollback()
+        abort(500, "Error while switching room policy status.") 
+    
+    return jsonify({"enabled": policy.active}) 
 
 @bp.route("/rooms/policies", methods=["GET"])
 @login_required

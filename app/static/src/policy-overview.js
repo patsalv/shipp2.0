@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const deviceTypePolicyEditBtns = document.querySelectorAll(
     ".device-type-policy-edit"
   );
+  const roomPolicyToggleBtns = document.querySelectorAll(".room-policy-toggle");
   const alertMsg = document.getElementById("alertMsg");
   deviceTypeTrashButton.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
@@ -39,6 +40,53 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  roomPolicyToggleBtns.forEach(function (toggleBtn) {
+    toggleBtn.addEventListener("load", loadRoomPolicyState(toggleBtn));
+    toggleBtn.addEventListener("click", function () {
+      switchRoomPolicyState(toggleBtn);
+    });
+  });
+
+  async function loadRoomPolicyState(toggleBtn) {
+    let status =
+      toggleBtn.parentNode.parentNode.parentNode.dataset.policyStatus;
+
+    if (status == "enabled" || status == "active") {
+      toggleBtn.checked = true;
+    } else {
+      toggleBtn.checked = false;
+    }
+  }
+
+  async function switchRoomPolicyState(toggleBtn) {
+    let policyId = toggleBtn.parentNode.parentNode.parentNode.dataset.policyId;
+    try {
+      let url;
+      if (window.SCRIPT_ROOT) {
+        url = `${window.SCRIPT_ROOT}/rooms/policies/${policyId}`;
+      } else {
+        url = `/rooms/policies/${policyId}`;
+      }
+
+      let response = await fetch(url, { method: "PUT" });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      let resJson = await response.json();
+
+      if (resJson.enabled) {
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].textContent =
+          "Enabled";
+      } else {
+        toggleBtn.parentNode.parentNode.parentNode.childNodes[5].textContent =
+          "Disabled";
+      }
+    } catch (e) {
+      console.error(e);
+      alertMsg.classList.replace("hidden", "flex");
+    }
+  }
   // delete funciton for room policies
   async function deleteRoomPolicy(roomId, policyId) {
     try {
