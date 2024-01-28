@@ -10,6 +10,53 @@ document.addEventListener("DOMContentLoaded", function () {
     ".device-type-policy-toggle"
   );
 
+  document
+    .getElementById("device-type-filter-btn")
+    .addEventListener("click", filterDeviceTypePolicies);
+
+  document
+    .getElementById("room-filter-btn")
+    .addEventListener("click", filterRoomPolicies);
+
+  document
+    .getElementById("device-filter-btn")
+    .addEventListener("click", filterDevicePolicies);
+
+  const highLevelTab = document.getElementById("high-level-policy-tab");
+  const deviceTab = document.getElementById("device-policy-tab");
+
+  highLevelTab.addEventListener("click", function () {
+    selectTab(highLevelTab);
+  });
+  deviceTab.addEventListener("click", function () {
+    selectTab(deviceTab);
+  });
+
+  function selectTab(tab) {
+    const deviceContainer = document.getElementById("device-policy-container");
+    const highPolicyLevelContainer = document.getElementById(
+      "high-level-policy-container"
+    );
+    const selectedTabClassList =
+      "inline-block px-4 py-2 text-white border-2 border-accent-3-reddish bg-accent-3-reddish rounded active";
+    const unselectedTabClassList =
+      "inline-block px-4 py-2.5 text-black rounded border-2 border-accent-3-reddish hover:text-white hover:bg-accent-3-reddish";
+
+    if (tab.id === "high-level-policy-tab") {
+      tab.classList = selectedTabClassList;
+      deviceTab.classList = unselectedTabClassList;
+      highPolicyLevelContainer.classList.remove("hidden");
+      deviceContainer.classList.add("hidden");
+      localStorage.setItem("currentPolicyTab", "high-level-policy-tab");
+    }
+    if (tab.id === "device-policy-tab") {
+      tab.classList = selectedTabClassList;
+      highLevelTab.classList = unselectedTabClassList;
+      deviceContainer.classList.remove("hidden");
+      highPolicyLevelContainer.classList.add("hidden");
+      localStorage.setItem("currentPolicyTab", "device-policy-tab");
+    }
+  }
   const alertMsg = document.getElementById("alertMsg");
   deviceTypeTrashButton.forEach(function (trashBtn) {
     trashBtn.addEventListener("click", function () {
@@ -57,6 +104,26 @@ document.addEventListener("DOMContentLoaded", function () {
       switchHighLevelPolicyState(toggleBtn, "device-type");
     });
   });
+
+  function loadInitialTab() {
+    // if not yet existing, set default
+    if (!window.localStorage.getItem("currentPolicyTab")) {
+      window.localStorage.setItem("currentPolicyTab", "high-level-policy-tab");
+      selectTab(highLevelTab);
+    } else if (
+      window.localStorage.getItem("currentPolicyTab") ===
+      "high-level-policy-tab"
+    ) {
+      selectTab(highLevelTab);
+      localStorage.setItem("currentPolicyTab", "high-level-policy-tab");
+    } else if (
+      window.localStorage.getItem("currentPolicyTab") === "device-policy-tab"
+    ) {
+      selectTab(deviceTab);
+      localStorage.setItem("currentPolicyTab", "device-policy-tab");
+    }
+  }
+  loadInitialTab();
 
   async function loadHighLevelPolicyState(toggleBtn) {
     let status =
@@ -218,18 +285,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     return res;
   }
-
-  document
-    .getElementById("device-type-filter-btn")
-    .addEventListener("click", filterDeviceTypePolicies);
-
-  document
-    .getElementById("room-filter-btn")
-    .addEventListener("click", filterRoomPolicies);
-
-  document
-    .getElementById("device-filter-btn")
-    .addEventListener("click", filterDevicePolicies);
 
   async function filterRoomPolicies() {
     let selectedRoomId = document.getElementById("rooms").value;
