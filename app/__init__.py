@@ -5,6 +5,8 @@ import logging
 from flask.logging import default_handler
 from sqlalchemy_utils.functions import database_exists
 from flask_migrate import stamp
+from app.models.database_model import DeviceType
+from app.constants import DeviceTypeEnum
 
 
 def create_app(config_name: str):
@@ -32,14 +34,17 @@ def create_app(config_name: str):
         if not database_exists(db.engine.url):
             db.create_all(bind_key=None)
             #inizialize device types
-            from app.models.database_model import DeviceType
-            from app.constants import DeviceTypeEnum
-            for device_type_enum in DeviceTypeEnum:
-                device_type = DeviceType(type=device_type_enum.value)
-                db.session.add(device_type)
-                db.session.commit()
             stamp()
             app.logger.info("Database created")
+
+        # try:
+        #     for device_type_enum in DeviceTypeEnum:
+        #         device_type = DeviceType(type=device_type_enum.value)
+        #         db.session.add(device_type)
+        #         db.session.commit()
+
+        # except Exception as e:
+        #     app.logger.error(f"Could not initialize device types (might already exist): {e}")
 
         from app import views
         app.register_blueprint(views.bp)

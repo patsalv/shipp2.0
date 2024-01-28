@@ -1,7 +1,7 @@
-import datetime
 from dotenv import load_dotenv
 from logging.config import dictConfig
 import os
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -47,21 +47,24 @@ def execute_job():
 
 @app.cli.command()
 def execute_highlevel_policy_evaluation():
-    """Run room evaluation"""
+    """Run room and device type policy evaluation"""
     with app.app_context():
-        from app.policy_engine.policy_engine import evaluate_device_type_policies
+        from app.policy_engine.policy_engine import evaluate_device_types
         from app.policy_engine.policy_engine import evaluate_rooms
         app.logger.info("Starting room evaluation")
         evaluate_rooms()
-        evaluate_device_type_policies()
+        evaluate_device_types()
 
 @app.cli.command()
-def check_threshold():
+def check_mail_sent():
     """Threshold violation check"""
+    from app.models.database_model import RoomPolicy
+
     with app.app_context():
-        from app.policy_engine.policy_engine import check_for_request_threshold_violation
-        app.logger.info("Starting room evaluation")
-        check_for_request_threshold_violation()
+        policies = RoomPolicy.query.all()
+        for policy in policies:
+            print("Sent: ", policy.threshold_warning_sent )
+
 
 
 @app.cli.command()
@@ -70,11 +73,7 @@ def deploy():
     # migrate database to latest revision
     upgrade()
 
-@app.cli.command()
-def get_current_time():
-    """Get current time (to debug)"""
-    print("Current time: ", datetime.datetime.now(), "TZ from .env: ", os.getenv('TZ'))
-    
+
 
 @app.cli.command()
 def execute_weekly_notifications():
@@ -104,6 +103,21 @@ def db_add_device_types():
             device_type = DeviceType(type=device_type_enum.value)
             db.session.add(device_type)
             db.session.commit()
+
+
+@app.cli.command()
+def get_device_types():
+    """test function"""
+    with app.app_context():
+        from app.models.database_model import DeviceType
+        device_types = DeviceType.query.all()
+
+        for device_type in device_types:
+            print("device_type.type", device_type.type.value)
+            print("IS OFFLINE?", device_type.offline)
+            for device in device_type.devices:
+                print("device.name: ", device.device_name)
+                
 
 @app.cli.command()
 def init_mock_devices():

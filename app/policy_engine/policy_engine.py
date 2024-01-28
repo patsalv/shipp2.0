@@ -149,32 +149,6 @@ def evaluate_rooms():
     for room in all_rooms:
         evaluate_room_policies(room)
 
-
-# TODO: improve performance -> cases where early return would make senes?
-def evaluate_single_device_type_policy(device_type_policy:DeviceTypePolicy):
-    '''Evaluates a single DeviceTypePolicy and activates/deactivates it accordingly. 
-    Returns "enforced" if a policy has been enforced and None otherwise '''
-    try:
-        device_type_obj = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
-
-    except Exception as e:
-        print("An error occured when querying the db to retreive a device type: ", e)
-        return
-    # check ¡f policy is currently active
-    if device_type_policy.is_active():
-        # check if it is an offline policy and if the device is not already offline
-        if device_type_policy.offline_mode and not device_type_obj.offline:
-            #see if the device type is already offline
-            enforce_device_type_offline_policy(device_type_policy)
-    else:
-        current_app.logger.info("Policy", device_type_policy.name , "is not active")
-        if device_type_policy.offline_mode:
-            #see if the device type is still offline
-            if device_type_obj.offline:
-                relinquish_device_type_offline_policy(device_type_policy)
-                if device_type_policy.threshold_warning_sent:
-                    device_type_policy.reset_threshold_warning_sent()
-
 def evaluate_policies_per_device_type(device_type: DeviceType):
     '''Evaluates all policies for a given device type and activates/deactivates them accordingly'''
     has_active_policy = device_type.has_active_policy(offline_only=False)
@@ -189,6 +163,7 @@ def evaluate_policies_per_device_type(device_type: DeviceType):
         try:
             if has_active_policy:
                 active_policy.reset_threshold_warning_sent()
+                print("going to enforce device type, ", device_type)
                 enforce_offline_device_type(device_type)
                 device_type.offline = True
             else: 

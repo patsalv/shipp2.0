@@ -11,7 +11,7 @@ from app.forms import DeviceForm, EditDeviceTypePolicyForm, EditRoomPolicyForm, 
 from flask_login import login_required, login_user, logout_user
 from app.constants import DevicePolicyStatus, DeviceTypeEnum, HighLevelPolicyType, HighLevelPolicyStatus, PolicyType, RoomStatus
 from app.models.database_model import DeviceType, DeviceTypePolicy
-from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_device_types, evaluate_policies_per_device_type, evaluate_room_policies, evaluate_single_device_type_policy
+from app.policy_engine.policy_engine import check_for_device_type_policy_conflicts, check_for_room_policy_conflicts, evaluate_policies_per_device_type, evaluate_room_policies
 from app.service_integration_api import init_pihole_device, update_pihole_device
 
 bp = Blueprint("main", __name__, template_folder="templates")
@@ -295,7 +295,7 @@ def room_policy(room_id):
                 if is_conflicting:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 room_policy.insert_room_policy()
-                evaluate_room_policies(room) # ensures room policy gets immediately activated if falling in the current timeframe
+                evaluate_room_policies(room) 
                 return render_template("room.html", room=room, created_policy_name=room_policy.name)    
             except Exception as e:
                 current_app.logger.error(f"Error while updating room policies: {e}")
@@ -365,6 +365,8 @@ def switch_room_policy_status(policy_id):
         policy= db.get_or_404(RoomPolicy, policy_id)
         policy.active = not policy.active
         policy.update_policy()
+
+        evaluate_room_policies(policy.room) #this somehow works
     except Exception as e:
         current_app.logger.error(f"Error while switching room policy status: {e}")
         db.session.rollback()
@@ -457,11 +459,15 @@ def switch_device_type_policy_status(policy_id):
         policy= db.get_or_404(DeviceTypePolicy, policy_id)
         policy.active = not policy.active
         policy.update_policy()
+
+        affected_device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == policy.device_type)).scalars().first()
+        evaluate_policies_per_device_type(affected_device_type)
     except Exception as e:
         current_app.logger.error(f"Error while switching room policy status: {e}")
         db.session.rollback()
         abort(500, "Error while switching room policy status.") 
     
+
     in_time_frame = is_in_timeframe(policy.start_time, policy.end_time, datetime.datetime.now().time(),include_start=True)
 
     if policy.active and in_time_frame:

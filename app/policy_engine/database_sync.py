@@ -63,12 +63,15 @@ def sync_device_policies(device):
 
 def deactivate_device_policies(device: Device ):
     '''Sets all policies of the devices in the room to inactive'''
+    print("INSIDE DEACTIVATE DEVICE POLICIES")
     try:
         policies = device.policies
+        print("POLICies: ", policies)
         for policy in policies:
             policy.active = False
             policy.update_policy()
     except Exception as e:
+        current_app.logger.error(f"Error while deactivating device policies: {e}")
         print("An error occured while deactivation_device_policies:  ", e)
 
 def activate_device_policies(device: Device ):
@@ -80,10 +83,13 @@ def activate_device_policies(device: Device ):
 
 def block_all_domains(device: Device):
     ''' blocks all corresponding domains of a device in pi-hole'''
+    print("inside block all domains")
+    current_app.logger.info(f"Blocking all domains for device {device.id}...")
     # get domains which are not yet in pihole from device policies
     pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
     policies = device.policies
     pi_domains = pi_group.domains.all()
+    print("pi domains: ", pi_domains)
     pi_domain_map = build_pi_domain_map(pi_domains)        
     new_pi_domains = get_new_pi_domains(pi_domains, policies, pi_domain_map)
     
@@ -96,6 +102,7 @@ def block_all_domains(device: Device):
     # set already exisiting domains to block
     for domain in pi_domains:
         domain.type = 1 # 0 = allow, 1 = block
+        current_app.logger.info(f"Blocking domain {domain.domain} for device {device.id}...")
 
     db.session.commit()    
 
@@ -134,7 +141,6 @@ def offline_through_room_or_type(device:Device):
 
 def enforce_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     '''Blocks all domains for all devices in the device type'''
-    current_app.logger.info("Enforcing device type policy...")
     devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
     device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
     
@@ -149,7 +155,7 @@ def enforce_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
 def enforce_offline_device_type(device_type: DeviceType):
     '''Blocks all domains for all devices in the device type'''
     current_app.logger.info("Enforcing device type policy...")
-    
+    print("INSIDE ENFORCE OFFLINE DEVICE TYPE")
     try:
         for device in device_type.devices:
             deactivate_device_policies(device)
