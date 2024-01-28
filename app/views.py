@@ -262,7 +262,7 @@ def highlevel_policies():
                 room_policy.insert_room_policy()
                 corresponding_room = db.get_or_404(Room, form.rooms.data)
                 evaluate_room_policies(corresponding_room) # ensures room policy gets immediately activated if falling in the current timeframe
-                return render_template("room.html", room=corresponding_room, created_policy_name=room_policy.name)    
+                return redirect(url_for("main.policy_overview"))
             
             elif form.policy_type.data == HighLevelPolicyType.DEVICE_TYPE_POLICY.value:
                 device_type_policy = DeviceTypePolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, device_type=form.device_types.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
