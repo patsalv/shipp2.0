@@ -163,7 +163,6 @@ def evaluate_policies_per_device_type(device_type: DeviceType):
         try:
             if has_active_policy:
                 active_policy.reset_threshold_warning_sent()
-                print("going to enforce device type, ", device_type)
                 enforce_offline_device_type(device_type)
                 device_type.offline = True
             else: 

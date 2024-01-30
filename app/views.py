@@ -199,12 +199,8 @@ def rooms():
 @bp.route("/rooms/<int:room_id>", methods=["GET", "DELETE"]) 
 @login_required
 def room_by_id(room_id):
-    
     room = db.get_or_404(Room, room_id)
-    
     return render_template("room.html", room=room)
-
-
 
 
 @bp.route("/add-room", methods=["GET", "POST"])
@@ -231,8 +227,17 @@ def add_room():
 @bp.route("/delete-room/<int:room_id>", methods=["DELETE"])
 @login_required
 def delete_room(room_id):
-    room = db.get_or_404(Room, room_id)
-    room.delete_room()
+    try:
+        room = db.get_or_404(Room, room_id)
+        for policy in room.policies:
+            policy.delete_room_policy()
+
+        room.delete_room()
+    except Exception as e:
+        current_app.logger.error(f"Error while deleting room: {e}")
+        db.session.rollback()
+        abort(500, "Error while deleting room.")
+
     return redirect(url_for("main.rooms"))
 
 @bp.route("/highlevelpolicies", methods=["GET", "POST"])
@@ -309,8 +314,14 @@ def room_policy(room_id):
 @bp.route("/room/<int:room_id>/policies/<int:room_policy_id>", methods=["DELETE"])
 @login_required
 def delete_room_policy(room_id,room_policy_id):
-    room_policy = db.get_or_404(RoomPolicy, room_policy_id)
-    room_policy.delete_room_policy()
+    try:
+        room_policy = db.get_or_404(RoomPolicy, room_policy_id)
+        room_policy.delete_room_policy()
+    except Exception as e:
+        current_app.logger.error(f"Error while deleting room policy: {e}")
+        db.session.rollback()
+        abort(500, "Error while deleting room policy.")
+
     return redirect(url_for("main.room_by_id", room_id=room_id))
 
 
@@ -557,7 +568,6 @@ def filter_device_policies():
     device_id = args.to_dict()["deviceId"]
     policy_status = args.to_dict()["status"]
     permission = args.to_dict()["permission"]
-    print("SELECTED PERMISSION: ", permission);
     if device_id == "ALL":
         all_policies_for_type = Policy.query.all()
     else:
