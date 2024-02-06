@@ -47,11 +47,11 @@ def execute_job():
 
 @app.cli.command()
 def execute_highlevel_policy_evaluation():
-    """Run room and device type policy evaluation"""
+    """Run the room and device type policy evaluation"""
     with app.app_context():
         from app.policy_engine.policy_engine import evaluate_device_types
         from app.policy_engine.policy_engine import evaluate_rooms
-        app.logger.info("Starting room evaluation")
+        app.logger.info("Starting high-level policy evaluation")
         evaluate_rooms()
         evaluate_device_types()
 

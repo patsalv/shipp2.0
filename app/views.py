@@ -250,29 +250,25 @@ def highlevel_policies():
     TEMPLATE_PATH = "policies/add-highlevel-policy.html"
     if(request.method=="GET"):
         return render_template(TEMPLATE_PATH, form=form)
-    
 
-    form.validate()
-    for error in form.errors.items():
-        print("Error: ", error)
-
-    if(request.method=="POST" ):
+    if(request.method=="POST" and form.validate_on_submit()):
         try:
-            # Handle room policy
             if form.policy_type.data == HighLevelPolicyType.ROOM_POLICY.value:
-                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=form.rooms.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
-                is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(room_policy)
-                if is_conflicting:
+                room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data,end_time=form.end_time.data, room_id=form.rooms.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
+                policy_in_conflict = check_for_room_policy_conflicts(
+                    room_policy)
+                if policy_in_conflict is not None:
                     raise Exception(f"Device type policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 room_policy.insert_room_policy()
                 corresponding_room = db.get_or_404(Room, form.rooms.data)
-                evaluate_room_policies(corresponding_room) # ensures room policy gets immediately activated if falling in the current timeframe
+                evaluate_room_policies(corresponding_room) 
+                # ensures room policy gets immediately activated if in current time frame
                 return redirect(url_for("main.policy_overview"))
             
             elif form.policy_type.data == HighLevelPolicyType.DEVICE_TYPE_POLICY.value:
                 device_type_policy = DeviceTypePolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, device_type=form.device_types.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
-                is_conflicting, policy_in_conflict = check_for_device_type_policy_conflicts(device_type_policy)
-                if is_conflicting:
+                policy_in_conflict = check_for_device_type_policy_conflicts(device_type_policy)
+                if policy_in_conflict is not None:
                     raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
                 device_type_policy.insert_policy()
 
@@ -443,9 +439,9 @@ def edit_device_type_policies(policy_id):
         policy.offline_mode = form.offline_mode.data
         policy.request_threshold = form.request_threshold.data
         
-        is_conflicting, policy_in_conflict = check_for_device_type_policy_conflicts(policy)
+        policy_in_conflict = check_for_device_type_policy_conflicts(policy)
 
-        if is_conflicting:
+        if policy_in_conflict is not None:
             return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=f"Device type policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
         else:
             try:

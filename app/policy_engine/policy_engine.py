@@ -6,7 +6,7 @@ from app.constants import DeviceTypeEnum, HighLevelPolicyType, PolicyType, Defau
 from flask import current_app
 from app.models.database_model import DeviceType
 
-from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_offline_policy, enforce_offline_device_type, enforce_offline_room, relinquish_device_type_offline_policy, relinquish_offline_device_type, relinquish_offline_room, sync_policies_to_pihole
+from app.policy_engine.database_sync import activate_device_policies, deactivate_device_policies, enforce_device_type_offline_policy, enforce_offline_device_type, enforce_offline_room, relax_device_type_offline_policy, relax_offline_device_type, relax_offline_room, sync_policies_to_pihole
 from datetime import datetime
 from typing import Union, Tuple
 
@@ -14,7 +14,6 @@ from typing import Union, Tuple
 
 # TODO: consider putting this in helpers.py
 def overlapping_timeframes(start_time1: time, end_time1: time, start_time2: time, end_time2: time) -> bool:
-    
     #include_start = False, since we allow to start a new policy at the same time the old one ends
     if is_in_timeframe(start_time1, end_time1, start_time2, include_start=False):
         return True
@@ -29,7 +28,7 @@ def overlapping_timeframes(start_time1: time, end_time1: time, start_time2: time
             
 
 # TODO: adapt to new policies
-def check_for_room_policy_conflicts(new_policy: RoomPolicy )-> Union[Tuple[bool, None], Tuple[bool, RoomPolicy]]:
+def check_for_room_policy_conflicts(new_policy: RoomPolicy )-> Union[ None ,RoomPolicy]:
     '''
     Checks if timeframe of new policy to be inserted conflicts with already 
     existing policies
@@ -38,7 +37,7 @@ def check_for_room_policy_conflicts(new_policy: RoomPolicy )-> Union[Tuple[bool,
     specific_room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == new_policy.room_id)).scalars().all()
     for room_policy in specific_room_policies:
         if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
-            return True, room_policy
+            return room_policy
 
     # set with all device types that are in the room
     relevant_device_types = set()
@@ -52,18 +51,18 @@ def check_for_room_policy_conflicts(new_policy: RoomPolicy )-> Union[Tuple[bool,
         device_type_policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == type)).scalars().all()
         for device_type_policy in device_type_policies:
             if overlapping_timeframes(new_policy.start_time, new_policy.end_time, device_type_policy.start_time, device_type_policy.end_time):
-                return True, device_type_policy
+                return device_type_policy
 
-    return False, None
+    return None
     
 # TODO: improve readability
-def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Union[Tuple[bool, None], Tuple[bool, DeviceTypePolicy]]:
+def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Union[None, DeviceTypePolicy]:
     # get all policies for this device type
     specific_device_type_policies = db.session.execute(db.select(DeviceTypePolicy).where(DeviceTypePolicy.device_type == new_policy.device_type)).scalars().all()
     # check if new policy conflicts with any of the already existing policies
     for device_type_policy in specific_device_type_policies:
         if overlapping_timeframes(new_policy.start_time, new_policy.end_time, device_type_policy.start_time, device_type_policy.end_time):
-            return True, device_type_policy
+            return device_type_policy
     
     # else, for each device of this device type, check if device exists in a room.  
     devices_of_type = db.session.execute(db.select(Device).where(Device.device_type == new_policy.device_type)).scalars().all()
@@ -75,22 +74,20 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
             room_policies = db.session.execute(db.select(RoomPolicy).where(RoomPolicy.room_id == device.room_id)).scalars().all()
         except Exception as e:
             print("No room policies found. Error: ", e )
-            return False, None
+            return None
         
         if room_policies:
             for room_policy in room_policies:
                 if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
                     return True, room_policy
         
-    return False, None
+    return None
     
 
 
 def check_for_request_threshold_violation(policy: Union[RoomPolicy, DeviceTypePolicy] ,policy_type:HighLevelPolicyType):
     from app.reporting.email_notification_service import send_threshold_notification_mail
     from app.monitors.pihole_monitor import last_n_minutes_summary
-
-
     unix_now = int(datetime.now().timestamp())
     start_time_unix = get_start_time_in_unix(policy.start_time)
     seconds_since_start = unix_now - start_time_unix
@@ -137,7 +134,7 @@ def evaluate_room_policies(room:Room) -> None:
                 room.status = RoomStatus.OFFLINE.value
             else: 
                 room.status = RoomStatus.ONLINE.value # setting it to online so sync_device_policies works propperly
-                relinquish_offline_room(room.id)
+                relax_offline_room(room.id)
             room.update_room()
         except Exception as e:
             db.rollback()
@@ -167,7 +164,7 @@ def evaluate_policies_per_device_type(device_type: DeviceType):
                 device_type.offline = True
             else: 
                 device_type.offline = False# setting it to online so sync_device_policies works propperly
-                relinquish_offline_device_type(device_type)
+                relax_offline_device_type(device_type)
             device_type.update()
         except Exception as e:
             db.rollback()

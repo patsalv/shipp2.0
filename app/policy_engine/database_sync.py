@@ -80,29 +80,32 @@ def activate_device_policies(device: Device ):
 
 def block_all_domains(device: Device):
     ''' blocks all corresponding domains of a device in pi-hole'''
-    # get domains which are not yet in pihole from device policies
+    
     pi_group = db.session.execute(db.select(Group).where(Group.name == device.mac_address)).scalars().one()
     policies = device.policies
     pi_domains = pi_group.domains.all()
+    # making sure domainlist is up to date so everything is blocked
     pi_domain_map = build_pi_domain_map(pi_domains)        
     new_pi_domains = get_new_pi_domains(pi_domains, policies, pi_domain_map)
     
-    # inserting new domains in db (domain consisting of domain name and type)
+    # inserting new domains in db 
     if len(new_pi_domains) > 0:
         pi_group.domains.extend(new_pi_domains)
         db.session.add(pi_group)
         db.session.flush()
     
+    updated_pi_domains = pi_group.domains.all()
     # set already exisiting domains to block
-    for domain in pi_domains:
+    for domain in updated_pi_domains:
         domain.type = 1 # 0 = allow, 1 = block
-        current_app.logger.info(f"Blocking domain {domain.domain} for device {device.id}...")
+        current_app.logger.info(f"Blocking domain {domain.domain} for device {device.id}")
 
     db.session.commit()    
 
 
 def enforce_offline_room(room: Room):
-    '''Blocks all domains for all devices in the room'''
+    '''Issues the blocking of all domains for all devices in a 
+    room and deactivates all device policies'''
     try:
         for device in room.devices:
            block_all_domains(device)
@@ -111,7 +114,7 @@ def enforce_offline_room(room: Room):
         current_app.logger.error(f"Error while enforcing offline room: {e}")
         db.session.rollback()        
 
-def relinquish_offline_room(room_id:int):
+def relax_offline_room(room_id:int):
     '''Restores the policies of the devices in the room'''
     devices = db.session.execute(db.select(Device).where(Device.room_id == room_id)).scalars().all()
     try:
@@ -119,7 +122,7 @@ def relinquish_offline_room(room_id:int):
             sync_device_policies(device)
             activate_device_policies(device)
     except Exception as e:
-        current_app.logger.error(f"Error while relinquishing offline room: {e}")
+        current_app.logger.error(f"Error while relaxing offline room: {e}")
         db.session.rollback()
 
 def offline_through_room_or_type(device:Device):
@@ -159,19 +162,18 @@ def enforce_offline_device_type(device_type: DeviceType):
         current_app.logger.error(f"Error while enforcing offline device type: {e}")
         db.session.rollback()   
 
-def relinquish_offline_device_type(device_type:DeviceType):
+def relax_offline_device_type(device_type:DeviceType):
     try:
         for device in device_type.devices:
             sync_device_policies(device)
             activate_device_policies(device)
     except Exception as e:
-        current_app.logger.error(f"Error while relinquishing offline device type: {e}")
+        current_app.logger.error(f"Error while relaxing offline device type: {e}")
         db.session.rollback()        
 
 
-def relinquish_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
+def relax_device_type_offline_policy(device_type_policy: DeviceTypePolicy):
     '''Restores the policies of the devices affected by the device type policy'''
-    current_app.logger.info("Relinquishing device type policy...")
     devices = db.session.execute(db.select(Device).where(Device.device_type == device_type_policy.device_type)).scalars().all()
     device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type.value)).scalars().one()
 
