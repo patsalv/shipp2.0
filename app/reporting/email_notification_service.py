@@ -1,3 +1,4 @@
+from datetime import datetime
 import smtplib
 import os
 from email.mime.multipart import MIMEMultipart
@@ -99,8 +100,11 @@ def create_threshold_notification_mail(user:User, policy: Union[RoomPolicy,Devic
     df = weekly_summary()
     top_domains = df[['client_name', "domain"]].value_counts().nlargest(10).sort_values(ascending=False)
     top_dict = top_domains.to_dict()
+    date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    html_content = render_template('emails/weekly-summary.html', username=username, top_dict=top_dict)
+
+
+    html_content = render_template('emails/threshold-violation.html', username=username, date_time=date_time, device=device, policy=policy, top_dict=top_dict)
     #-----------------
     msg = EmailBuilder() \
         .with_subject('Request Threshold Violation') \
