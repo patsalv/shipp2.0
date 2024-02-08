@@ -2,7 +2,6 @@ from dotenv import load_dotenv
 from logging.config import dictConfig
 import os
 
-
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
@@ -64,6 +63,21 @@ def check_mail_sent():
         policies = RoomPolicy.query.all()
         for policy in policies:
             print("Sent: ", policy.threshold_warning_sent )
+
+
+@app.cli.command()
+def mock_threshold_warning():
+    """Threshold violation check"""
+    from app.models.database_model import Device
+    from app.models.database_model import RoomPolicy
+    from app.reporting.email_notification_service import send_threshold_notification_mail
+
+
+    with app.app_context():
+        policy = RoomPolicy.query.all()[0]
+        device = Device.query.all()[0]
+
+        send_threshold_notification_mail(policy, device)
 
 
 

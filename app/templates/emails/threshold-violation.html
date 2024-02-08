@@ -112,15 +112,15 @@
         overflow: hidden;
       "
     >
-      Your weekly smart home privacy report.
+      A device exceeded a request threshold!
     </div>
     <div style="background-color: #e1e8ed">
       <!-- Header -->
       <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#190178" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
       <div
         style="
-          background: #190178;
-          background-color: #190178;
+          background: #ef6334;
+          background-color: #ef6334;
           margin: 0px auto;
           max-width: 600px;
         "
@@ -131,7 +131,7 @@
           cellpadding="0"
           cellspacing="0"
           role="presentation"
-          style="background: #190178; background-color: #190178; width: 100%"
+          style="background: #ef6334; background-color: #ef6334; width: 100%"
         >
           <tbody>
             <tr>
@@ -188,7 +188,7 @@
                               <tr>
                                 <td style="width: 50px">
                                   <img
-                                    src="cid:logo"
+                                    src="cid:shipp_logo"
                                     style="
                                       border: 0;
                                       display: block;
@@ -329,7 +329,7 @@
                               color: grey;
                             "
                           >
-                            Device {{device}} exceeded a request threshold!!
+                            {{device.device_name}} exceeded a request threshold!
                           </div>
                         </td>
                       </tr>
@@ -405,17 +405,18 @@
             font-size: 13px;
             line-height: 1;
             color: grey;
-            padding-left: 20px;
-            padding-right: 20px;
             flex-direction: column;
             max-width: 600px;
+            padding: 10px 25px;
           "
         >
-          <p>Hello {{username}}</p>
+          <p style="margin-bottom: 4px">Hi {{username}}</p>
           <p>
-            On {{date_time}} device {{device}} has exceeded the request
-            threshold of {{policy.request_threshold}} requests per hour defined
-            in policy {{policy.name}}.
+            We inform you that today at {{date_time}}, device
+            <em>{{device.device_name}}</em> has exceeded the request threshold
+            of {{policy.request_threshold}} requests per hour defined in policy
+            <em>{{policy.name}}</em>. To get more information, checkout the
+            admin dashboard.
           </p>
           <div
             style="
@@ -433,7 +434,7 @@
                 align-items: center;
               "
             >
-              <p style="margin: 8px">Device</p>
+              <p style="margin: 8px; font-weight: bold">Device</p>
               <table
                 style="
                   display: flex;
@@ -476,14 +477,14 @@
                 margin: 20px;
               "
             >
-              <p style="margin: 8px">Violated Policy</p>
+              <p style="margin: 8px; font-weight: bold">Violated Policy</p>
 
               <table
                 style="
                   display: flex;
                   flex-direction: column;
                   border: 1px solid #ccc;
-                  min-width: 200px;
+                  min-width: 320px;
                   font-size: 12px;
                 "
               >
@@ -540,11 +541,11 @@
           </div>
         </div>
       </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="white" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+
       <div
         style="
-          background: white;
-          background-color: white;
+          background: #ef6334;
+          background-color: #ef6334;
           margin: 0px auto;
           max-width: 600px;
         "
@@ -555,777 +556,7 @@
           cellpadding="0"
           cellspacing="0"
           role="presentation"
-          style="background: white; background-color: white; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="center"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <table
-                            border="0"
-                            cellpadding="0"
-                            cellspacing="0"
-                            role="presentation"
-                            style="
-                              border-collapse: collapse;
-                              border-spacing: 0px;
-                            "
-                          >
-                            <tbody>
-                              <tr>
-                                <td style="width: 550px">
-                                  <img
-                                    src="cid:chart1"
-                                    style="
-                                      border: 0;
-                                      display: block;
-                                      outline: none;
-                                      text-decoration: none;
-                                      height: auto;
-                                      width: 100%;
-                                      font-size: 13px;
-                                    "
-                                    width="550"
-                                    height="auto"
-                                  />
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="white" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: white;
-          background-color: white;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: white; background-color: white; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="left"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <div
-                            style="
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 13px;
-                              line-height: 1;
-                              text-align: left;
-                              color: grey;
-                            "
-                          >
-                            Discover which of your devices were the most active
-                            in the past week.
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><![endif]-->
-      <!-- Editor -->
-      <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f3f3f3" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #f3f3f3;
-          background-color: #f3f3f3;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #f3f3f3; background-color: #f3f3f3; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-bottom: 0px;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="center"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <div
-                            style="
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 20px;
-                              line-height: 1;
-                              text-align: center;
-                              color: rgb(165, 176, 184);
-                            "
-                          >
-                            24h Distribution
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f3f3f3" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #f3f3f3;
-          background-color: #f3f3f3;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #f3f3f3; background-color: #f3f3f3; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-bottom: 0px;
-                  padding-top: 0;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="center"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <table
-                            border="0"
-                            cellpadding="0"
-                            cellspacing="0"
-                            role="presentation"
-                            style="
-                              border-collapse: collapse;
-                              border-spacing: 0px;
-                            "
-                          >
-                            <tbody>
-                              <tr>
-                                <td style="width: 550px">
-                                  <img
-                                    src="cid:chart2"
-                                    style="
-                                      border: 0;
-                                      display: block;
-                                      outline: none;
-                                      text-decoration: none;
-                                      height: auto;
-                                      width: 100%;
-                                      font-size: 13px;
-                                    "
-                                    width="550"
-                                    height="auto"
-                                  />
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f3f3f3" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #f3f3f3;
-          background-color: #f3f3f3;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #f3f3f3; background-color: #f3f3f3; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-bottom: 30px;
-                  padding-top: 0px;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="left"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <div
-                            style="
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 13px;
-                              line-height: 1;
-                              text-align: left;
-                              color: grey;
-                            "
-                          >
-                            See how your devices behave during different hours
-                            of the day. The connection data of each device has
-                            been aggregated over the past week.
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#fcfcfc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #fcfcfc;
-          background-color: #fcfcfc;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #fcfcfc; background-color: #fcfcfc; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-top: 20px;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="center"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <div
-                            style="
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 20px;
-                              line-height: 1;
-                              text-align: center;
-                              color: grey;
-                            "
-                          >
-                            Top 10 Domains
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#fcfcfc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #fcfcfc;
-          background-color: #fcfcfc;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #fcfcfc; background-color: #fcfcfc; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-top: 0px;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="left"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <div
-                            style="
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 13px;
-                              line-height: 1;
-                              text-align: left;
-                              color: grey;
-                            "
-                          >
-                            Here is a ranking of the top ten domains visited by
-                            your smart home devices.
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#fcfcfc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #fcfcfc;
-          background-color: #fcfcfc;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #fcfcfc; background-color: #fcfcfc; width: 100%"
-        >
-          <tbody>
-            <tr>
-              <td
-                style="
-                  direction: ltr;
-                  font-size: 0px;
-                  padding: 20px 0;
-                  padding-top: 0px;
-                  text-align: center;
-                "
-              >
-                <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:600px;" ><![endif]-->
-                <div
-                  class="mj-column-per-100 mj-outlook-group-fix"
-                  style="
-                    font-size: 0px;
-                    text-align: left;
-                    direction: ltr;
-                    display: inline-block;
-                    vertical-align: top;
-                    width: 100%;
-                  "
-                >
-                  <table
-                    border="0"
-                    cellpadding="0"
-                    cellspacing="0"
-                    role="presentation"
-                    style="vertical-align: top"
-                    width="100%"
-                  >
-                    <tbody>
-                      <tr>
-                        <td
-                          align="left"
-                          class="demTable"
-                          style="
-                            font-size: 0px;
-                            padding: 10px 25px;
-                            word-break: break-word;
-                          "
-                        >
-                          <table
-                            cellpadding="0"
-                            cellspacing="0"
-                            width="100%"
-                            border="0"
-                            style="
-                              border-collapse: collapse;
-                              padding: 8px;
-                              color: #000000;
-                              font-family: Ubuntu, Helvetica, Arial, sans-serif;
-                              font-size: 13px;
-                              line-height: 22px;
-                              table-layout: auto;
-                              width: 100%;
-                              border: none;
-                            "
-                          >
-                            <thead>
-                              <tr>
-                                <th
-                                  style="
-                                    border: 1px solid #595959;
-                                    padding: 8px;
-                                    background: #190178;
-                                    color: #ffffff;
-                                  "
-                                >
-                                  Smart Device
-                                </th>
-                                <th
-                                  style="
-                                    border: 1px solid #595959;
-                                    padding: 8px;
-                                    background: #190178;
-                                    color: #ffffff;
-                                  "
-                                >
-                                  Domain
-                                </th>
-                                <th
-                                  style="
-                                    border: 1px solid #595959;
-                                    padding: 8px;
-                                    background: #190178;
-                                    color: #ffffff;
-                                  "
-                                >
-                                  Visits
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {% for key in top_dict %}
-                              <tr>
-                                <td
-                                  style="
-                                    border: 1px solid #595959;
-                                    text-align: left;
-                                    padding: 8px;
-                                    background: #fcfcfc;
-                                    color: #808080;
-                                  "
-                                  align="left"
-                                >
-                                  {{key[0]}}
-                                </td>
-                                <td
-                                  style="
-                                    border: 1px solid #595959;
-                                    text-align: left;
-                                    padding: 8px;
-                                    background: #fcfcfc;
-                                    color: #808080;
-                                  "
-                                  align="left"
-                                >
-                                  {{key[1]}}
-                                </td>
-                                <td
-                                  style="
-                                    border: 1px solid #595959;
-                                    text-align: left;
-                                    padding: 8px;
-                                    background: #fcfcfc;
-                                    color: #808080;
-                                  "
-                                  align="left"
-                                >
-                                  {{top_dict[key]}}
-                                </td>
-                              </tr>
-                              {% endfor %}
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <!--[if mso | IE]></td></tr></table><![endif]-->
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f3f3f3" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-      <div
-        style="
-          background: #f3f3f3;
-          background-color: #f3f3f3;
-          margin: 0px auto;
-          max-width: 600px;
-        "
-      >
-        <table
-          align="center"
-          border="0"
-          cellpadding="0"
-          cellspacing="0"
-          role="presentation"
-          style="background: #f3f3f3; background-color: #f3f3f3; width: 100%"
+          style="background: #ef6334; background-color: #ef6334; width: 100%"
         >
           <tbody>
             <tr>
@@ -1373,11 +604,10 @@
                               font-size: 13px;
                               line-height: 1;
                               text-align: center;
-                              color: #000000;
+                              color: white;
                             "
                           >
-                            Check out your admin dashboard to get even more
-                            insights!
+                            Check out your admin dashboard to get more insights!
                           </div>
                         </td>
                       </tr>

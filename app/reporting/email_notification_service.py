@@ -100,7 +100,7 @@ def create_threshold_notification_mail(user:User, policy: Union[RoomPolicy,Devic
     df = weekly_summary()
     top_domains = df[['client_name', "domain"]].value_counts().nlargest(10).sort_values(ascending=False)
     top_dict = top_domains.to_dict()
-    date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    date_time = datetime.now().time().strftime("%H:%M:%S")
 
 
 
