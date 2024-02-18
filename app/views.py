@@ -1,5 +1,6 @@
 # App routing
 import copy
+from typing import Union
 import datetime
 import traceback
 from flask import Blueprint, jsonify, make_response, render_template, redirect, url_for, request, flash, current_app, abort
@@ -221,7 +222,6 @@ def add_room():
 
     if(request.method=="GET"):
         unassigned_devices = Device.query.filter(Device.room_id.is_(None)).all()
-
         return render_template("add-room.html", form=form, devices=unassigned_devices)
 
 @bp.route("/delete-room/<int:room_id>", methods=["DELETE"])
@@ -258,7 +258,8 @@ def highlevel_policies():
                 policy_in_conflict = check_for_room_policy_conflicts(
                     room_policy)
                 if policy_in_conflict is not None:
-                    raise Exception(f"Device type policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+                    error_msg = build_conflict_error_message(policy_in_conflict)
+                    raise Exception(error_msg)
                 room_policy.insert_room_policy()
                 corresponding_room = db.get_or_404(Room, form.rooms.data)
                 evaluate_room_policies(corresponding_room) 
@@ -269,7 +270,8 @@ def highlevel_policies():
                 device_type_policy = DeviceTypePolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, device_type=form.device_types.data, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
                 policy_in_conflict = check_for_device_type_policy_conflicts(device_type_policy)
                 if policy_in_conflict is not None:
-                    raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+                    error_msg = build_conflict_error_message(policy_in_conflict)
+                    raise Exception(error_msg)
                 device_type_policy.insert_policy()
 
                 affected_device_type = db.session.execute(db.select(DeviceType).where(DeviceType.type == device_type_policy.device_type)).scalars().first()
@@ -292,9 +294,10 @@ def room_policy(room_id):
         if(form.validate_on_submit()):
             try:
                 room_policy = RoomPolicy(name=form.name.data, start_time=form.start_time.data, end_time=form.end_time.data, room_id=room_id, offline_mode=form.offline_mode.data, request_threshold=form.request_threshold.data)
-                is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(room_policy)
-                if is_conflicting:
-                    raise Exception(f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
+                policy_in_conflict = check_for_room_policy_conflicts(room_policy)
+                if policy_in_conflict is not None:
+                    error_msg = build_conflict_error_message(policy_in_conflict)
+                    raise Exception(error_msg)
                 room_policy.insert_room_policy()
                 evaluate_room_policies(room) 
                 return render_template("room.html", room=room, created_policy_name=room_policy.name)    
@@ -318,10 +321,9 @@ def delete_room_policy(room_id,room_policy_id):
         db.session.rollback()
         abort(500, "Error while deleting room policy.")
 
-    return redirect(url_for("main.room_by_id", room_id=room_id))
+    return redirect(url_for("main.policy_overview"))
 
 
-# TODO: add error message
 @bp.route("/rooms/policies/<int:policy_id>", methods=["GET", "POST"])
 @login_required
 def edit_room_policy(policy_id):
@@ -345,10 +347,10 @@ def edit_room_policy(policy_id):
         policy.offline_mode = form.offline_mode.data
         policy.request_threshold = form.request_threshold.data
         
-        is_conflicting, policy_in_conflict = check_for_room_policy_conflicts(policy)
+        policy_in_conflict = check_for_room_policy_conflicts(policy)
         
 
-        if is_conflicting:
+        if policy_in_conflict is not None:
             return render_template(EDIT_POLICY_URL, policy=policy, form=form, error=f"Room policy conflicts with policy \"{policy_in_conflict.name}\", active from {policy_in_conflict.start_time} to {policy_in_conflict.end_time}.")
         else:
             try:
@@ -592,6 +594,9 @@ def disable_input_field(input_field):
         input_field.render_kw = {}
     input_field.render_kw["disabled"] = "disabled"
 
+def build_conflict_error_message(policy: Union[DeviceTypePolicy, RoomPolicy] ):
+    message = f"This policy conflicts with policy \"{policy.name}\", active from {policy.start_time} to {policy.end_time}. Reconfigure the start and end time of your policy."
+    return message
 
 def _map_policy_data(data):
     policies = []

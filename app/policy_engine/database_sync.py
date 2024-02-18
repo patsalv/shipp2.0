@@ -94,9 +94,9 @@ def block_all_domains(device: Device):
         db.session.add(pi_group)
         db.session.flush()
     
-    updated_pi_domains = pi_group.domains.all()
+
     # set already exisiting domains to block
-    for domain in updated_pi_domains:
+    for domain in pi_domains:
         domain.type = 1 # 0 = allow, 1 = block
         current_app.logger.info(f"Blocking domain {domain.domain} for device {device.id}")
 

@@ -33,18 +33,17 @@ def create_app(config_name: str):
 
         if not database_exists(db.engine.url):
             db.create_all(bind_key=None)
-            #inizialize device types
             stamp()
             app.logger.info("Database created")
 
-        # try:
-        #     for device_type_enum in DeviceTypeEnum:
-        #         device_type = DeviceType(type=device_type_enum.value)
-        #         db.session.add(device_type)
-        #         db.session.commit()
+            try:
+                for device_type_enum in DeviceTypeEnum:
+                    device_type = DeviceType(type=device_type_enum.value)
+                    db.session.add(device_type)
+                    db.session.commit()
 
-        # except Exception as e:
-        #     app.logger.error(f"Could not initialize device types (might already exist): {e}")
+            except Exception as e:
+                app.logger.error(f"Could not initialize device types (might already exist): {e}")
 
         from app import views
         app.register_blueprint(views.bp)
