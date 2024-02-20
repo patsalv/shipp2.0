@@ -79,7 +79,7 @@ def check_for_device_type_policy_conflicts(new_policy: DeviceTypePolicy )-> Unio
         if room_policies:
             for room_policy in room_policies:
                 if overlapping_timeframes(new_policy.start_time, new_policy.end_time, room_policy.start_time, room_policy.end_time):
-                    return True, room_policy
+                    return room_policy
         
     return None
     
