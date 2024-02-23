@@ -194,7 +194,7 @@ class Room(db.Model):
 
         for room_policy in self.policies:
             if not room_policy.active:
-                return None
+                continue
             
             if is_in_timeframe(room_policy.start_time, room_policy.end_time, current_time, include_start=True):
                 return room_policy
@@ -269,7 +269,7 @@ class DeviceType(db.Model):
 
         for device_type_policy in self.policies:
             if not device_type_policy.active:
-                return None
+                continue
             
             if is_in_timeframe(device_type_policy.start_time, device_type_policy.end_time, current_time, include_start=True):
                 return device_type_policy
