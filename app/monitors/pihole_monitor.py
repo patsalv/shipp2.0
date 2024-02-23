@@ -78,8 +78,8 @@ def last_24h_summary():
     
     return convert_to_dataframe(dataset)
 
-def last_n_minutes_summary(minutes: int):
-    dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - (minutes*60),
+def last_n_minutes_summary(seconds: int):
+    dataset = fetch_dns_query_data(int(datetime.now().timestamp()) - (seconds),
                                    int(datetime.now().timestamp()))
     
     return convert_to_dataframe(dataset)
@@ -115,13 +115,7 @@ def fetch_dns_query_data(from_timestamp: int, until_timestamp: int):
     active_ips = db.session.execute(
         db.select(DeviceConfig.ip_address).where(DeviceConfig.valid_to == None)).scalars().all()  # noqa: E711
     active_ip_set = set(active_ips)
-    # ---- uncomment to debug query data in text file----
-    # Define the file path where you want to store the data
-    # test_file_path = "query_data.txt"
-    # with open(test_file_path, 'w') as file:
-    # # Write each query to the file, one per line
-    #     for query in query_data:
-    #         file.write(str(query) + "\n")
+  
 
     dataset = []
     # Process data
