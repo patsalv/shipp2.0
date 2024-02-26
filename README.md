@@ -1,18 +1,14 @@
-# shipp. Smart Home Integrated Privacy Protection
+# SHIPP 2.0 - Smart Home Integrated Privacy Control
 
-This project was developed as part of a bachelor thesis at the University of Zurich in Spring 2023.
+SHIPP 2.0 extends the [SHIPP](https://github.com/elduwa/shipp/) prototype developed by GitHub user [elduwa](https://github.com/elduwa). SHIPP 2.0 introduces a policy-based management component to enhance the device management capabilities of [SHIPP](https://github.com/elduwa/shipp/) and was developed as part of a bachelor thesis at the University of Zurich in Fall 2023.
+
+The content of this repository contains all the additions made to [SHIPP](https://github.com/elduwa/shipp/) as well as its source code in original or modified form.
 
 [![Docker Version][docker-image]][dockerhub-url]
 
-_shipp_ is an extensible open-source privacy enhancing technology designed for smart home environments.
-By integrating existing tools into a unified framework, it aims to monitor and control smart home devices' communication behavior through user-defined policies.
-The goal is to increase transparency and limit data collection.
-
-![](shipp_logo.png)
-
 ## Installation
 
-On Raspberry Pi OS:
+On Raspberry Pi OS (64bit required!):
 
 1. Install Docker.
    ```bash
@@ -84,10 +80,6 @@ On Raspberry Pi OS:
 
 ## Usage examples
 
-### Using the dashboard
-
-https://github.com/elduwa/shipp/assets/33815072/e52f1358-204a-47b2-8e5d-10d513506c99
-
 ### Adding a new device
 
 https://github.com/elduwa/shipp/assets/33815072/0d7b9c6e-1d19-465f-bef3-5cf94be6b64e
@@ -104,9 +96,9 @@ https://github.com/elduwa/shipp/assets/33815072/66cee392-0d71-40bf-a610-3e1597c0
 - Node.js >= 18.16.0
 - Ideally a running Pi-hole instance that is configured as the primary DNS server for your network.
 
-1. Clone the _shipp_ repository.
+1. Clone the _SHIPP 2.0_ repository.
    ```bash
-   git clone https://github.com/elduwa/shipp.git
+   git clone https://github.com/patsalv/shipp2.0.git
    cd shipp
    ```
 2. Add a .env file to the root directory of the project with the following contents:
@@ -152,27 +144,5 @@ https://github.com/elduwa/shipp/assets/33815072/66cee392-0d71-40bf-a610-3e1597c0
 **_NOTE:_** If you get an error massage saying "User
 sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) unable to open database file", you need to create the database files manualy. You can do this by simply creating an empty sqlite.db file in the root directory of the project.
 
-## Meta
-
-Elliott Wallace – elliott.wallace@uzh.ch
-
-Distributed under the MIT license. See `LICENSE` for more information.
-
-[https://github.com/elduwa/](https://github.com/elduwa/)
-
-## Contributing
-
-1. Fork it (<https://github.com/elduwa/shipp/fork>)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
-
-## Disclaimer
-
-This project is not affiliated with or officially endorsed by Pi-hole, InfluxDB or Home Assistant.
-
-<!-- Markdown link & img dfn's -->
-
 [docker-image]: https://img.shields.io/docker/v/elliottwallace/shipp?logo=docker&logoColor=%232496ED
-[dockerhub-url]: https://hub.docker.com/r/elliottwallace/shipp
+[dockerhub-url]: https://hub.docker.com/r/patsalvi/shipp
