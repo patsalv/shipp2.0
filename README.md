@@ -82,11 +82,11 @@ On Raspberry Pi OS (64bit required!):
 
 ### Adding a new device
 
-https://github.com/elduwa/shipp/assets/33815072/0d7b9c6e-1d19-465f-bef3-5cf94be6b64e
+https://github.com/patsalv/shipp2.0/assets/89481679/42dc5e66-e9ad-411a-9e2d-44a275c87191
 
-### Modifying device policies
+### Add a new room:
 
-https://github.com/elduwa/shipp/assets/33815072/66cee392-0d71-40bf-a610-3e1597c072a2
+
 
 ## Development setup
 
