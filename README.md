@@ -82,9 +82,27 @@ On Raspberry Pi OS (64bit required!):
 
 ### Adding a new device
 
-https://github.com/patsalv/shipp2.0/assets/89481679/42dc5e66-e9ad-411a-9e2d-44a275c87191
+https://github.com/patsalv/shipp2.0/assets/89481679/3b5eb7b3-7fe9-4e2e-bacf-c1b07503b72e
+
 
 ### Add a new room:
+
+https://github.com/patsalv/shipp2.0/assets/89481679/fe4b3321-b5f1-4300-b1cc-671ab5ee3d56
+
+### Add a new room policy:
+
+
+https://github.com/patsalv/shipp2.0/assets/89481679/3a8c68d5-24a1-44dd-ba9e-fcbee878fae9
+
+### Edit a device-type policy
+
+https://github.com/patsalv/shipp2.0/assets/89481679/3200b33d-1b60-4ff9-aa4f-76001ad0643d
+
+### Filtering policies in the policy dashboard:
+
+https://github.com/patsalv/shipp2.0/assets/89481679/7c5781c7-6285-4bc6-8ae6-a5c2622588af
+
+
 
 
 
