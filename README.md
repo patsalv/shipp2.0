@@ -103,8 +103,11 @@ https://github.com/patsalv/shipp2.0/assets/89481679/3200b33d-1b60-4ff9-aa4f-7600
 https://github.com/patsalv/shipp2.0/assets/89481679/7c5781c7-6285-4bc6-8ae6-a5c2622588af
 
 
-
-
+**_NOTE:_** If the device types are not properly initialized in the DB, run 
+```bash
+flask db-add-device-types
+```
+to initialize them manually.
 
 ## Development setup
 
